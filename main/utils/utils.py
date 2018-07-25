@@ -165,7 +165,7 @@ def sparse_to_dense(sp_indices, output_shape, values, default_value=0):
 
   assert len(sp_indices) == len(values), \
       'Length of sp_indices is not equal to length of values'
-
+  
   array = np.ones(output_shape) * default_value
   for idx, value in zip(sp_indices, values):
     array[tuple(idx)] = value

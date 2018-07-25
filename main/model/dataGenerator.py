@@ -66,7 +66,10 @@ def read_image_and_gt(img_names, data, config):
     deltas = []
     aidxs  = []
 
-    #loads annotations from file
+    '''
+    Loads annotations from file
+    : return: list with x and y of central point, weight and height
+    '''
     def load_annotation():
         bb = {}
         for i in range(config.BATCH_SIZE):
@@ -140,6 +143,8 @@ def read_image_and_gt(img_names, data, config):
         #iterate all bounding boxes for a file
         for i in range(len(bboxes_per_file)):
             #compute overlaps of bounding boxes and anchor boxes
+
+            # TODO: substituir por distancia entre vértices para fins de teste
             overlaps = batch_iou(config.ANCHOR_BOX, bboxes_per_file[i])
 
             #achor box index
@@ -193,40 +198,42 @@ def read_image_and_gt(img_names, data, config):
         for j in range(len(labels[i])):
             if (i, aidxs[i][j]) not in aidx_set:
                 aidx_set.add((i, aidxs[i][j]))
-                label_indices.append(
-                    [i, aidxs[i][j], labels[i][j]])
+                label_indices.append([i, aidxs[i][j], labels[i][j]])
                 mask_indices.append([i, aidxs[i][j]])
-                bbox_indices.extend(
-                    [[i, aidxs[i][j], k] for k in range(4)])
+                bbox_indices.extend([[i, aidxs[i][j], k] for k in range(4)])
                 box_delta_values.extend(deltas[i][j])
                 box_values.extend(bboxes[i][j])
 
 
     #transform them into matrices
-    input_mask =  np.reshape(
-            sparse_to_dense(
-                mask_indices,
-                [config.BATCH_SIZE, config.ANCHORS],
-                [1.0] * len(mask_indices)),
+    input_mask = np.reshape(
+                        sparse_to_dense(
+                            mask_indices,
+                            [config.BATCH_SIZE, config.ANCHORS],
+                            [1.0] * len(mask_indices)),
+                        [config.BATCH_SIZE, config.ANCHORS, 1])
 
-            [config.BATCH_SIZE, config.ANCHORS, 1])
 
-    box_delta_input =  sparse_to_dense(
-            bbox_indices, [config.BATCH_SIZE, config.ANCHORS, 4],
-            box_delta_values)
+    box_delta_input = sparse_to_dense(
+                        bbox_indices, 
+                        [config.BATCH_SIZE, config.ANCHORS, 4],
+                        box_delta_values)
 
-    box_input =  sparse_to_dense(
-            bbox_indices, [config.BATCH_SIZE, config.ANCHORS, 4],
-            box_values)
+    box_input = sparse_to_dense(
+                        bbox_indices, 
+                        [config.BATCH_SIZE, config.ANCHORS, 4],
+                        box_values)
 
+    
     labels = sparse_to_dense(
-            label_indices,
-            [config.BATCH_SIZE, config.ANCHORS, config.CLASSES],
-            [1.0] * len(label_indices))
+                    label_indices,
+                    [config.BATCH_SIZE, config.ANCHORS, config.CLASSES],
+                    [1.0] * len(label_indices)) 
 
+    # print(" SIZES: ", len(input_mask)," ",len(box_delta_input)," ",len(box_input)," ",len(labels))
 
     #concatenate ouputs
-    Y = np.concatenate((input_mask, box_input,  box_delta_input, labels), axis=-1).astype(np.float32)
+    Y = np.concatenate((input_mask, box_input, box_delta_input, labels), axis=-1).astype(np.float32)
 
     return imgs, Y
 
@@ -328,7 +335,6 @@ def read_image_and_gt_with_original(img_files, gt_files, config):
 
         #TODO enable dynamic Data Augmentation
         """
-
         if config.DATA_AUGMENTATION:
             assert mc.DRIFT_X >= 0 and mc.DRIFT_Y > 0, \
                 'mc.DRIFT_X and mc.DRIFT_Y must be >= 0'
@@ -361,8 +367,6 @@ def read_image_and_gt_with_original(img_files, gt_files, config):
             if np.random.randint(2) > 0.5:
                 im = im[:, ::-1, :]
                 gt_bbox[:, 0] = orig_w - 1 - gt_bbox[:, 0]
-
-
         """
 
         #and store
@@ -488,12 +492,11 @@ def generator_from_data_path(img_names, gt_dir, config, return_filenames=False, 
     """
     Generator that yields (X, Y)
     :param img_names: list of images names with full path
-
-        :param gt_names: list of gt names with full path
-
+    :param gt_dir: path of the .json file with the anotations
     :param config: config dict containing various hyperparameters
     :return: a generator yielding images and ground truths
    """
+
     # print("img_names ",len(img_names))
     # print("gt_names ",len(gt_names))
     # assert len(img_names) == len(gt_names), "Number of images and ground truths not equal"
@@ -530,8 +533,7 @@ def generator_from_data_path(img_names, gt_dir, config, return_filenames=False, 
             # gt_names_batch = gt_names[i:j]
 
             try:
-                #get images and ground truths
-                # imgs, gts = read_image_and_gt(img_names_batch, gt_names_batch, config)
+                #get images and ground truths                
                 imgs, gts = read_image_and_gt(img_names_batch, data, config)
                 #mini_batches_completed += 1
                 #print(" mini_batches_completed ", mini_batches_completed)

@@ -12,7 +12,7 @@
 # Email: jordyfaria0@gmail.com
 
 
-"""Model configuration for COCO 2017 dataset"""
+""" Model configuration for COCO 2017 dataset """
 
 import numpy as np
 from easydict import EasyDict as edict
@@ -46,7 +46,7 @@ def squeezeDet_config(name):
               79,80,81,82,84,85,86,87,88,89,90]
 
     # number of categories to classify
-    cfg.CLASSES = len(cfg.CLASS_NAMES)
+    cfg.CLASSES = 90 # len(cfg.CLASS_NAMES)
 
     # classes to class index dict
     cfg.CLASS_TO_IDX = dict(zip(cfg.CLASS_NAMES, cfg.IDS))
@@ -61,9 +61,9 @@ def squeezeDet_config(name):
     cfg.EXP_THRESH = 1.0
 
     #image properties
-    cfg.IMAGE_WIDTH           = 768
-    cfg.IMAGE_HEIGHT          = 624 
-    cfg.N_CHANNELS            = 3
+    cfg.IMAGE_WIDTH  = 768
+    cfg.IMAGE_HEIGHT = 624 
+    cfg.N_CHANNELS   = 3
 
     #batch sizes
     cfg.BATCH_SIZE = 5
@@ -71,24 +71,24 @@ def squeezeDet_config(name):
     cfg.STEPS = 10
 
     #SGD + Momentum parameters
-    cfg.WEIGHT_DECAY          = 0.001
-    cfg.LEARNING_RATE         = 0.001
-    cfg.MAX_GRAD_NORM         = 1.0
-    cfg.MOMENTUM              = 0.9
+    cfg.WEIGHT_DECAY   = 0.001
+    cfg.LEARNING_RATE  = 0.01
+    cfg.MAX_GRAD_NORM  = 1.0
+    cfg.MOMENTUM       = 0.9
 
     #coefficients of loss function
-    cfg.LOSS_COEF_BBOX        = 5.0
-    cfg.LOSS_COEF_CONF_POS    = 75.0
-    cfg.LOSS_COEF_CONF_NEG    = 100.0
-    cfg.LOSS_COEF_CLASS       = 1.0
+    cfg.LOSS_COEF_BBOX      = 5.0
+    cfg.LOSS_COEF_CONF_POS  = 75.0
+    cfg.LOSS_COEF_CONF_NEG  = 100.0
+    cfg.LOSS_COEF_CLASS     = 1.0
 
 
     #thesholds for evaluation
-    cfg.NMS_THRESH            = 0.4
-    cfg.PROB_THRESH           = 0.005
-    cfg.TOP_N_DETECTION       = 64
-    cfg.IOU_THRESHOLD         = 0.5
-    cfg.FINAL_THRESHOLD       = 0.0
+    cfg.NMS_THRESH       = 0.4
+    cfg.PROB_THRESH      = 0.005
+    cfg.TOP_N_DETECTION  = 64
+    cfg.IOU_THRESHOLD    = 0.5
+    cfg.FINAL_THRESHOLD  = 0.0
 
 
     cfg.ANCHOR_SEED = np.array([[  36.,  37.], [ 366., 174.], [ 115.,  59.],
@@ -154,8 +154,8 @@ def load_dict(path):
     cfg.ANCHORS = len(cfg.ANCHOR_BOX)
 
     #if you added a class in the config manually, but were to lazy to update
-    cfg.CLASSES = len(cfg.CLASS_NAMES)
-    cfg.CLASS_TO_IDX = dict(zip(cfg.CLASS_NAMES, cfg.IDS))
+    # cfg.CLASSES = len(cfg.CLASS_NAMES)
+    # cfg.CLASS_TO_IDX = dict(zip(cfg.CLASS_NAMES, cfg.IDS))
 
     return cfg
 
