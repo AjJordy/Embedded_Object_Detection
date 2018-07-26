@@ -1,10 +1,10 @@
-## Embedded Object Detection
+# Embedded Object Detection
 
-# Deep Learning for Object Detection
+## Deep Learning for Object Detection
 
 This git is a Neural Network (NN) for object detection that can be embedded. It's calls squeezeDet. In this case the NN was trained on COCO 2017 dataset. 
 
-# How to use
+## How to use
 
 At first, you need to download the dataset from the official site. http://cocodataset.org/#download
 
@@ -25,7 +25,11 @@ The main files are train.py (just run that to train the NN) and eval.py (just ru
 # References 
 
 https://github.com/BichenWuUCB/squeezeDet
+
 https://github.com/omni-us/squeezedet-keras
+
 https://medium.com/searchink-eng/fast-object-detection-with-squeezedet-on-keras-5cdd124b46ce
+
 https://medium.com/searchink-eng/a-deeper-look-into-squeezedet-on-keras-13f107d0dd32
+
 http://cocodataset.org/#download
