@@ -51,7 +51,7 @@ def input_file(gt_dir):
     return data
 
 #we could maybe use the standard data generator from keras?
-def read_image_and_gt(img_names, data, config):
+def read_image_and_gt(img_names, data, config, base):
     '''
     Transform images and send transformed image and label
     :param img_files: list of image files including the path of a batch
@@ -75,20 +75,17 @@ def read_image_and_gt(img_names, data, config):
         for i in range(config.BATCH_SIZE):
             # search in all json file looking for the 'file_name' 
             for j in range(len(data["images"])):
-                dir = config.TRAIN2017 + data["images"][j]['file_name']
+                dir = base + data["images"][j]['file_name']                
                 if(dir == img_names[i]):
                     bb  = data["annotations"][j]
                     cls = bb["category_id"]
-
             annotations = []
-
             x = bb["bbox"][0]
             y = bb["bbox"][1]
             w = bb["bbox"][2]
             h = bb["bbox"][3]
 
             annotations.append([x, y, w, h, cls])
-
         return annotations
 
     #init tensor of images
@@ -485,7 +482,7 @@ def read_image_and_gt_with_original(img_files, gt_files, config):
 
 
 @threadsafe_generator
-def generator_from_data_path(img_names, gt_dir, config, return_filenames=False, shuffle=False ):
+def generator_from_data_path(img_names, gt_dir, base, config, return_filenames=False, shuffle=False ):
     """
     Generator that yields (X, Y)
     :param img_names: list of images names with full path
@@ -525,7 +522,7 @@ def generator_from_data_path(img_names, gt_dir, config, return_filenames=False, 
 
             try:
                 #get images and ground truths                
-                imgs, gts = read_image_and_gt(img_names_batch, data, config)
+                imgs, gts = read_image_and_gt(img_names_batch, data, config,base)
                 #mini_batches_completed += 1
                 #print(" mini_batches_completed ", mini_batches_completed)
                 yield (imgs, gts)

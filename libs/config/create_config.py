@@ -25,20 +25,20 @@ def squeezeDet_config(name):
     cfg = edict()
 
     cfg.CLASS_NAMES =  ['person', 'bicycle', 'car', 'motorcycle', 'airplane',
-                        'bus', 'train', 'truck', 'boat', 'traffic light',
-                        'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird',
+                        'bus', 'train', 'truck', 'boat', 'traffic_light',
+                        'fire_hydrant', 'stop_sign', 'parking_meter', 'bench', 'bird',
                         'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear',
                         'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie',
-                        'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-                        'kite', 'baseball bat', 'baseball glove', 'skateboard',
-                        'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup',
+                        'suitcase', 'frisbee', 'skis', 'snowboard', 'sports_ball',
+                        'kite', 'baseball_bat', 'baseball_glove', 'skateboard',
+                        'surfboard', 'tennis_racket', 'bottle', 'wine_glass', 'cup',
                         'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
-                        'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-                        'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed',
-                        'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote',
-                        'keyboard', 'cell phone', 'microwave', 'oven', 'toaster',
+                        'sandwich', 'orange', 'broccoli', 'carrot', 'hot_dog', 'pizza',
+                        'donut', 'cake', 'chair', 'couch', 'potted_plant', 'bed',
+                        'dining_table', 'toilet', 'tv', 'laptop', 'mouse', 'remote',
+                        'keyboard', 'cell_phone', 'microwave', 'oven', 'toaster',
                         'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
-                        'teddy bear', 'hair drier', 'toothbrush']
+                        'teddy_bear', 'hair_drier', 'toothbrush']
 
     cfg.IDS= [1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,171,8,19,20,21,22,23,24,25,27,
               28,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46,47,48,49,50,51,52,
@@ -47,7 +47,7 @@ def squeezeDet_config(name):
 
     # number of categories to classify
     # it's 90 because the max value of the IDS is 90, but we have only 80 classes 
-    cfg.CLASSES = 90 # len(cfg.CLASS_NAMES) # 80
+    cfg.CLASSES = 91 # len(cfg.CLASS_NAMES) # 80
 
     # classes to class index dict
     cfg.CLASS_TO_IDX = dict(zip(cfg.CLASS_NAMES, cfg.IDS))
@@ -92,7 +92,7 @@ def squeezeDet_config(name):
     cfg.FINAL_THRESHOLD  = 0.0
 
     #paths
-    cfg.TRAIN2017 = "dataset\\train2017"
+    cfg.TRAIN2017 = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017\\"
 
 
     cfg.ANCHOR_SEED = np.array([[  36.,  37.], [ 366., 174.], [ 115.,  59.],

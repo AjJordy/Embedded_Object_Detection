@@ -12,11 +12,11 @@
 # Email: jordyfaria0@gmail.com
 
 
-from main.model.squeezeDet import  SqueezeDet
-from main.model.dataGenerator import generator_from_data_path, visualization_generator_from_data_path
-from main.model.evaluation import evaluate
-from main.model.visualization import  visualize
-from main.config.create_config import load_dict
+from libs.model.squeezeDet import  SqueezeDet
+from libs.model.dataGenerator import generator_from_data_path, visualization_generator_from_data_path
+from libs.model.evaluation import evaluate
+from libs.model.visualization import  visualize
+from libs.config.create_config import load_dict
 
 from keras.utils import multi_gpu_model
 import keras.backend as K
@@ -29,28 +29,31 @@ import argparse
 
 
 #default values for some variables
-img_file = "img_val.txt"
-gt_file = "gt_val.txt"
-img_file_test = "img_test.txt"
-gt_file_test = "gt_test.txt"
-log_dir_name = "./log"
-checkpoint_dir = './log/checkpoints'
-tensorboard_dir = './log/tensorboard_val'
-tensorboard_dir_test = './log/tensorboard_test'
+img_file = "dataset\\img_val.txt"
+img_file_test = "dataset\\img_test.txt"
+gt_val_dir = "dataset\\annotations\\instances_val2017.json"
+gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
+base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"
+base_test ="D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\test2017\\"
+
+log_dir_name = ".\\log"
+checkpoint_dir = '.\\log\\checkpoints'
+tensorboard_dir = '.\\log\\tensorboard_val'
+tensorboard_dir_test = '.\\log\\tensorboard_test'
 TIMEOUT = 20
-EPOCHS = 100
+EPOCHS = 10
 CUDA_VISIBLE_DEVICES = "1"
-steps = None
+steps = 20
 GPUS = 1
 STARTWITH = None
-CONFIG = "squeeze.config"
+CONFIG = "libs\\config\\squeeze.config"
 TESTING = False
 
 
 def eval():
     """
-    Checks for keras checkpoints in a tensorflow dir and evaluates losses and given metrics. Also creates visualization and
-    writes everything to tensorboard.
+    Checks for keras checkpoints in a tensorflow dir and evaluates losses and given metrics. 
+    Also creates visualization and writes everything to tensorboard.
     """
 
     #create config object
@@ -60,24 +63,24 @@ def eval():
     with open(img_file) as imgs:
         img_names = imgs.read().splitlines()
     imgs.close()
-    with open(gt_file) as gts:
-        gt_names = gts.read().splitlines()
-    gts.close()
+
+    # with open(gt_file) as gts:
+    #     gt_names = gts.read().splitlines()
+    # gts.close()
 
     #if multigpu support, adjust batch size
     if GPUS > 1:
         cfg.BATCH_SIZE = GPUS * cfg.BATCH_SIZE
 
 
-    #compute number of batches per epoch
-    nbatches_valid, mod = divmod(len(gt_names), cfg.BATCH_SIZE)
+    # compute number of batches per epoch
+    # nbatches_valid, mod = divmod(len(gt_names), cfg.BATCH_SIZE)
 
     #if a number for steps was given
     if steps is not None:
         nbatches_valid = steps
 
     #set gpu to use if no multigpu
-
 
     #hide the other gpus so tensorflow only uses this one
     os.environ['CUDA_VISIBLE_DEVICES'] = CUDA_VISIBLE_DEVICES
@@ -90,31 +93,32 @@ def eval():
 
 
     #Variables to visualize losses (as metrics) for tensorboard
-    loss_var = tf.Variable(
-        initial_value=0, trainable=False,
-        name='val_loss', dtype=tf.float32
-    )
+    loss_var = tf.Variable(initial_value=0, 
+                           trainable=False,
+                           name='val_loss', 
+                           dtype=tf.float32)
 
-    loss_without_regularization_var = tf.Variable(
-        initial_value=0, trainable=False,
-        name='val_loss_without_regularization', dtype=tf.float32
-    )
+    loss_without_regularization_var = tf.Variable(initial_value=0, 
+                                                  trainable=False,
+                                                  name='val_loss_without_regularization', 
+                                                  dtype=tf.float32)
 
-    conf_loss_var = tf.Variable(
-        initial_value=0, trainable=False,
-        name='val_conf_loss', dtype=tf.float32
-    )
-    class_loss_var = tf.Variable(
-        initial_value=0, trainable=False,
-        name='val_class_loss', dtype=tf.float32
-    )
+    conf_loss_var = tf.Variable(initial_value=0, 
+                                trainable=False,
+                                name='val_conf_loss', 
+                                dtype=tf.float32)
 
-    bbox_loss_var = tf.Variable(
-        initial_value=0, trainable=False,
-        name='val_bbox_loss', dtype=tf.float32
-    )
+    class_loss_var = tf.Variable(initial_value=0, 
+                                 trainable=False, 
+                                 name='val_class_loss', 
+                                 dtype=tf.float32)
 
-    #create placeholders for metrics. Variables get assigned these.
+    bbox_loss_var = tf.Variable(initial_value=0, 
+                                trainable=False,
+                                name='val_bbox_loss', 
+                                dtype=tf.float32)
+
+    # create placeholders for metrics. Variables get assigned these.
     loss_placeholder = tf.placeholder(loss_var.dtype, shape=())
     loss_without_regularization_placeholder = tf.placeholder(loss_without_regularization_var.dtype, shape=())
     conf_loss_placeholder = tf.placeholder(conf_loss_var.dtype, shape=())
@@ -122,7 +126,7 @@ def eval():
     bbox_loss_placeholder = tf.placeholder(bbox_loss_var.dtype, shape=())
 
 
-    #we have to create the assign ops here and call the assign ops with a feed dict, otherwise memory leak
+    # we have to create the assign ops here and call the assign ops with a feed dict, otherwise memory leak
     loss_assign_ops = [ loss_var.assign(loss_placeholder),
                         loss_without_regularization_var.assign(loss_without_regularization_placeholder),
                         conf_loss_var.assign (conf_loss_placeholder),
@@ -136,10 +140,11 @@ def eval():
     tf.summary.scalar("bbox_loss" , bbox_loss_var)
 
 
-    #variables for images to visualize
+    # variables for images to visualize
     images_with_boxes = tf.Variable(initial_value=np.zeros((cfg.VISUALIZATION_BATCH_SIZE,
                                                             cfg.IMAGE_HEIGHT,
-                                                            cfg.IMAGE_WIDTH, 3)),
+                                                            cfg.IMAGE_WIDTH, 
+                                                            3)),
                                     name="image",
                                     dtype=tf.float32)
 
@@ -150,45 +155,46 @@ def eval():
 
     tf.summary.image("images",
                     images_with_boxes,
-                    max_outputs=cfg.VISUALIZATION_BATCH_SIZE )
+                    max_outputs=cfg.VISUALIZATION_BATCH_SIZE)
 
-    #variables for precision recall and mean average precision
+    # variables for precision recall and mean average precision
     precisions = []
     recalls = []
-    APs = []  # mean average precision
+    APs = [] # mean average precision
     f1s= []
 
-    #placeholders as above
+    # placeholders as above
     precision_placeholders = []
     recall_placeholders = []
-    AP_placeholders = []
-    f1_placeholders = []
     prmap_assign_ops = []
+    AP_placeholders = []
+    f1_placeholders = []    
 
 
-    #add variables, placeholders and assign ops for each class
+    # add variables, placeholders and assign ops for each class
     for i, name in enumerate(cfg.CLASS_NAMES):
 
-        print("Creating tensorboard plots for " + name)
+        # print("Creating tensorboard plots for " + name)
 
-        precisions.append( tf.Variable(
-            initial_value=0, trainable=False,
-            name="precision/" +name , dtype=tf.float32
-        ))
-        recalls.append( tf.Variable(
-            initial_value=0, trainable=False,
-            name="recall/" +name , dtype=tf.float32
-        ))
+        precisions.append(tf.Variable(initial_value=0, 
+                                      trainable=False,
+                                      name="precision/" + name, 
+                                      dtype=tf.float32))
 
-        f1s.append( tf.Variable(
-            initial_value=0, trainable=False,
-            name="f1/" +name , dtype=tf.float32
-        ))
+        recalls.append( tf.Variable(initial_value=0, 
+                                    trainable=False,
+                                    name="recall/" +name, 
+                                    dtype=tf.float32))
 
-        APs.append( tf.Variable(
-            initial_value=0, trainable=False,
-            name="AP/" +name , dtype=tf.float32
-        ))
+        f1s.append( tf.Variable(initial_value=0, 
+                                trainable=False,
+                                name="f1/" +name, 
+                                dtype=tf.float32))
+
+        APs.append( tf.Variable(initial_value=0, 
+                                trainable=False,
+                                name="AP/" +name, 
+                                dtype=tf.float32))
 
         precision_placeholders.append(
             tf.placeholder(dtype=precisions[i].dtype,
@@ -197,6 +203,7 @@ def eval():
         recall_placeholders.append(
             tf.placeholder(dtype=recalls[i].dtype,
                            shape=recalls[i].shape))
+
         AP_placeholders.append(
             tf.placeholder(dtype=APs[i].dtype,
                            shape=APs[i].shape))
@@ -206,18 +213,17 @@ def eval():
                            shape=f1s[i].shape))
 
 
-
-        prmap_assign_ops.append( precisions[i].assign(precision_placeholders[i]))
+        prmap_assign_ops.append(precisions[i].assign(precision_placeholders[i]))
         prmap_assign_ops.append(recalls[i].assign(recall_placeholders[i]))
         prmap_assign_ops.append(APs[i].assign(AP_placeholders[i]))
         prmap_assign_ops.append(f1s[i].assign(f1_placeholders[i]))
 
     #same for mean average precision
 
-    mAP = tf.Variable(
-        initial_value=0, trainable=False,
-        name="mAP", dtype=tf.float32
-    )
+    mAP = tf.Variable(initial_value=0, 
+                      trainable=False,
+                      name="mAP", 
+                      dtype=tf.float32)
 
     mAP_placeholder = tf.placeholder(mAP.dtype, shape=())
 
@@ -246,20 +252,25 @@ def eval():
     squeeze = SqueezeDet(cfg)
 
     #dummy optimizer for compilation
-    sgd = optimizers.SGD(lr=cfg.LEARNING_RATE, decay=0, momentum=cfg.MOMENTUM,
-                         nesterov=False, clipnorm=cfg.MAX_GRAD_NORM)
+    sgd = optimizers.SGD(lr=cfg.LEARNING_RATE, 
+                         decay=0, 
+                         momentum=cfg.MOMENTUM,
+                         nesterov=False, 
+                         clipnorm=cfg.MAX_GRAD_NORM)
 
     if GPUS > 1:
-
         #parallelize model
         model = multi_gpu_model(squeeze.model, gpus=GPUS)
         model.compile(optimizer=sgd,
-                              loss=[squeeze.loss], metrics=[squeeze.bbox_loss, squeeze.class_loss,
-                                                            squeeze.conf_loss, squeeze.loss_without_regularization])
+                     loss=[squeeze.loss], 
+                     metrics=[squeeze.bbox_loss, 
+                              squeeze.class_loss, 
+                              squeeze.conf_loss, 
+                              squeeze.loss_without_regularization])
 
 
     else:
-    #compile model from squeeze object, loss is not a function of model directly
+    # compile model from squeeze object, loss is not a function of model directly
         squeeze.model.compile(optimizer=sgd,
                               loss=[squeeze.loss],
                               metrics=[squeeze.bbox_loss,
@@ -268,10 +279,10 @@ def eval():
                                        squeeze.loss_without_regularization])
 
         model = squeeze.model
-    #models already evaluated
+    # models already evaluated
     evaluated_models = set()
 
-    #get the best ckpts for test set
+    # get the best ckpts for test set
 
     best_val_loss_ckpt = None
     best_val_loss = np.inf
@@ -280,19 +291,22 @@ def eval():
     time_out_counter = 0
 
 
-    #use this for saving metrics to a csv
-    f = open( log_dir_name +  "/metrics.csv", "w")
+    # use this for saving metrics to a csv
+    f = open(log_dir_name +  "\\metrics.csv", "w")
 
     header = "epoch;regularized;loss;bbox;class;conf;"
 
     for i, name in enumerate(cfg.CLASS_NAMES):
-        header += name +"_precision;" + name+"_recall;" + name + "_AP;" + name + "_f1;"
+        header += name +"_precision;" \
+                  + name +"_recall;" \
+                  + name + "_AP;" \
+                  + name + "_f1;" 
 
     header += "\n"
 
     f.write(header)
 
-    #listening for new checkpoints
+    # listening for new checkpoints
     while 1:
 
         current_model = None
@@ -303,7 +317,6 @@ def eval():
             if STARTWITH is not None:
                 if ckpt < STARTWITH:
                     evaluated_models.add(ckpt)
-
 
 
             #if model hasn't been evaluated
@@ -320,25 +333,27 @@ def eval():
                 #load this ckpt
                 current_model= ckpt
                 try:
-                    squeeze.model.load_weights(checkpoint_dir + "/"+ ckpt)
+                    squeeze.model.load_weights(checkpoint_dir + "\\"+ ckpt)
 
-                #sometimes model loading files, because the file is still locked, so wait a little bit
+                # sometimes model loading files, because the file is still locked, so wait a little bit
                 except OSError as e:
                     print(e)
                     time.sleep(10)
-                    squeeze.model.load_weights(checkpoint_dir + "/" + ckpt)
+                    squeeze.model.load_weights(checkpoint_dir + "\\" + ckpt)
 
                 # create 2 validation generators, one for metrics and one for object detection evaluation
                 # we have to reset them each time to have the same data, otherwise we'd have to use batch size one.
-                val_generator_1 = generator_from_data_path(img_names, gt_names, config=cfg)
-                val_generator_2 = generator_from_data_path(img_names, gt_names, config=cfg)
+                val_generator_1 = generator_from_data_path(img_names, gt_val_dir, base_val, config=cfg)
+                val_generator_2 = generator_from_data_path(img_names, gt_val_dir, base_val, config=cfg)
                 # create a generator for the visualization of bounding boxes
-                vis_generator = visualization_generator_from_data_path(img_names, gt_names, config=cfg)
+                vis_generator = visualization_generator_from_data_path(img_names, gt_val_dir, config=cfg)
 
                 print("  Evaluate losses...")
                 #compute losses of whole val set
-                losses = model.evaluate_generator(val_generator_1, steps=nbatches_valid, max_queue_size=10,
-                                                         use_multiprocessing=False)
+                losses = model.evaluate_generator(val_generator_1, 
+                                                  steps=nbatches_valid, 
+                                                  max_queue_size=10,
+                                                  use_multiprocessing=False)
 
 
                 #manually add losses to tensorboard
@@ -350,10 +365,10 @@ def eval():
 
                 #print losses
                 print("  Losses:")
-                print("  Loss with regularization: {}   val loss:{} \n     bbox_loss:{} \n     class_loss:{} \n     conf_loss:{}".
-                      format(losses[0], losses[4], losses[1], losses[2], losses[3]) )
+                print("  Loss with regularization: {}\n\tval loss:{}\n\tbbox_loss:{}\n\tclass_loss:{}\n\tconf_loss:{}".
+                      format(losses[0], losses[4], losses[1], losses[2], losses[3]))
 
-                line += "{};{};{};{};{};".format(losses[0] , losses[4], losses[1], losses[2], losses[3])
+                line += "{};{};{};{};{};".format(losses[0], losses[4], losses[1], losses[2], losses[3])
 
                 #save model with smallest loss
                 if losses[4] < best_val_loss:
@@ -361,9 +376,11 @@ def eval():
                     best_val_loss_ckpt = current_model
 
 
-
                 #compute precision recall and mean average precision
-                precision, recall, f1,  AP = evaluate(model=model, generator=val_generator_2, steps=nbatches_valid, config=cfg)
+                precision, recall, f1,  AP = evaluate(model=model, 
+                                                      generator=val_generator_2, 
+                                                      steps=nbatches_valid, 
+                                                      config=cfg)
 
                 #create feed dict for visualization
                 prmap_feed_dict = {}
@@ -374,9 +391,7 @@ def eval():
                     prmap_feed_dict[AP_placeholders[i]] = AP[i,1]
                     prmap_feed_dict[f1_placeholders[i]] = f1[i]
 
-                    line += "{};{};{};{}".format( precision[i], recall[i],AP[i,1],f1[i])
-
-
+                    line += "{};{};{};{}".format(precision[i], recall[i],AP[i,1],f1[i])
 
 
                 prmap_feed_dict[mAP_placeholder] = np.mean(AP[:,1], axis=0)
@@ -391,7 +406,9 @@ def eval():
                 sess.run(prmap_assign_ops, prmap_feed_dict)
 
                 #create visualization
-                imgs = visualize( model=model, generator=vis_generator, config=cfg)
+                imgs = visualize(model=model, 
+                                 generator=vis_generator, 
+                                 config=cfg)
 
                 ##update op for images
                 sess.run(update_images, {update_placeholder:imgs})
@@ -453,45 +470,44 @@ def eval():
         #get test images and gt
         with open(img_file_test) as imgs:
             img_names_test = imgs.read().splitlines()
-
         imgs.close()
 
-        with open(gt_file_test) as gts:
-            gt_names_test = gts.read().splitlines()
+        # with open(gt_file_test) as gts:
+        #     gt_names_test = gts.read().splitlines()
+        # gts.close()
 
-        gts.close()
-
-        #compute number of batches per epoch
-        nbatches_test, mod = divmod(len(gt_names_test), cfg.BATCH_SIZE)
+        # compute number of batches per epoch
+        # nbatches_test, mod = divmod(len(gt_names_test), cfg.BATCH_SIZE)
 
         #if a number for steps was given
         if steps is not None:
             nbatches_test = steps
 
         #again create Variables to visualize losses for tensorboard, but this time for test set
-        test_loss_var = tf.Variable(
-            initial_value=0, trainable=False,
-            name='test_loss', dtype=tf.float32
-        )
+        test_loss_var = tf.Variable(initial_value=0, 
+                                    trainable=False,
+                                    name='test_loss', 
+                                    dtype=tf.float32)
 
-        test_loss_without_regularization_var = tf.Variable(
-            initial_value=0, trainable=False,
-            name='test_loss_without_regularization', dtype=tf.float32
-        )
+        test_loss_without_regularization_var = tf.Variable(initial_value=0, 
+                                                           trainable=False,
+                                                           name='test_loss_without_regularization', 
+                                                           dtype=tf.float32)
 
-        test_conf_loss_var = tf.Variable(
-            initial_value=0, trainable=False,
-            name='test_conf_loss', dtype=tf.float32
-        )
-        test_class_loss_var = tf.Variable(
-            initial_value=0, trainable=False,
-            name='test_class_loss', dtype=tf.float32
-        )
+        test_conf_loss_var = tf.Variable(initial_value=0, 
+                                         trainable=False,
+                                         name='test_conf_loss', 
+                                         dtype=tf.float32)
 
-        test_bbox_loss_var = tf.Variable(
-            initial_value=0, trainable=False,
-            name='test_bbox_loss', dtype=tf.float32
-        )
+        test_class_loss_var = tf.Variable(initial_value=0, 
+                                          trainable=False,
+                                          name='test_class_loss', 
+                                          dtype=tf.float32)
+
+        test_bbox_loss_var = tf.Variable(initial_value=0, 
+                                         trainable=False,
+                                         name='test_bbox_loss', 
+                                         dtype=tf.float32)
 
         #we have to create the assign ops here and call the assign ops with a feed dictg, otherwise memory leak
         test_loss_placeholder = tf.placeholder(loss_var.dtype, shape=())
@@ -527,24 +543,25 @@ def eval():
 
         for i, name in enumerate(cfg.CLASS_NAMES):
 
-            precisions.append( tf.Variable(
-                initial_value=0, trainable=False,
-                name="test/precision/" +name , dtype=tf.float32
-            ))
-            recalls.append( tf.Variable(
-                initial_value=0, trainable=False,
-                name="test/recall/" +name , dtype=tf.float32
-            ))
+            precisions.append( tf.Variable(initial_value=0, 
+                                           trainable=False,
+                                           name="test/precision/" +name , 
+                                           dtype=tf.float32))
 
-            f1s.append( tf.Variable(
-                initial_value=0, trainable=False,
-                name="test/f1/" +name , dtype=tf.float32
-            ))
+            recalls.append( tf.Variable(initial_value=0, 
+                                        trainable=False,
+                                        name="test/recall/" +name , 
+                                        dtype=tf.float32))
 
-            APs.append( tf.Variable(
-                initial_value=0, trainable=False,
-                name="test/AP/" +name , dtype=tf.float32
-            ))
+            f1s.append( tf.Variable(initial_value=0, 
+                                    trainable=False,
+                                    name="test/f1/" +name , 
+                                    dtype=tf.float32))
+
+            APs.append( tf.Variable(initial_value=0, 
+                                    trainable=False,
+                                    name="test/AP/" +name, 
+                                    dtype=tf.float32))
 
             precision_placeholders.append(
                 tf.placeholder(dtype=precisions[i].dtype,
@@ -568,10 +585,10 @@ def eval():
             prmap_assign_ops.append(f1s[i].assign(f1_placeholders[i]))
 
 
-        test_mAP = tf.Variable(
-            initial_value=0, trainable=False,
-            name="mAP", dtype=tf.float32
-        )
+        test_mAP = tf.Variable(initial_value=0, 
+                               trainable=False,
+                               name="mAP", 
+                               dtype=tf.float32)
 
         mAP_placeholder = tf.placeholder(test_mAP.dtype, shape=())
 
@@ -592,7 +609,7 @@ def eval():
 
         writer = tf.summary.FileWriter(tensorboard_dir_test)
 
-        i=1
+        i = 1
 
         #go through given checkpoints
         for ckpt in ckpts:
@@ -605,8 +622,8 @@ def eval():
 
             # create 2 validation generators, one for metrics and one for object detection evaluation
             # we have to reset them each time to have the same data
-            val_generator_1 = generator_from_data_path(img_names_test, gt_names_test, config=cfg)
-            val_generator_2 = generator_from_data_path(img_names_test, gt_names_test, config=cfg)
+            val_generator_1 = generator_from_data_path(img_names_test, gt_test_dir, base_test, config=cfg)
+            val_generator_2 = generator_from_data_path(img_names_test, gt_test_dir, base_test, config=cfg)
             # create a generator for the visualization of bounding boxes
 
             print("  Evaluate losses...")
@@ -680,13 +697,13 @@ if __name__ == "__main__":
 
     if args.val_img is not None:
         img_file = args.val_img
-    if args.val_gt is not None:
-        gt_file = args.val_gt
+    # if args.val_gt is not None:
+    #     gt_file = args.val_gt
 
-    if args.test_img is not None:
-        img_file_test = args.test_img
-    if args.test_gt is not None:
-        gt_file_test = args.test_gt
+    # if args.test_img is not None:
+    #     img_file_test = args.test_img
+    # if args.test_gt is not None:
+    #     gt_file_test = args.test_gt
 
     if args.gpu is not None:
         CUDA_VISIBLE_DEVICES = args.gpu

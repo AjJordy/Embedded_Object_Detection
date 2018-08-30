@@ -62,10 +62,6 @@ def batch_iou(boxes, box):
   union = boxes[:,2]*boxes[:,3] + box[2]*box[3] - inter
   return inter/union
 
-
-
-
-
 def nms(boxes, probs, threshold):
   """Non-Maximum supression.
   Args:
@@ -198,12 +194,12 @@ def bbox_transform_inv(bbox):
     xmin, ymin, xmax, ymax = bbox
     out_box = [[]]*4
 
-    width       = xmax - xmin + 1.0
-    height      = ymax - ymin + 1.0
-    out_box[0]  = xmin + 0.5*width
-    out_box[1]  = ymin + 0.5*height
-    out_box[2]  = width
-    out_box[3]  = height
+    width      = xmax - xmin + 1.0
+    height     = ymax - ymin + 1.0
+    out_box[0] = xmin + 0.5 * width
+    out_box[1] = ymin + 0.5 * height
+    out_box[2] = width
+    out_box[3] = height
 
     return out_box
 

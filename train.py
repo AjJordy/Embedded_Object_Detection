@@ -29,9 +29,10 @@ import gc
 
 
 # Global variables can be set by optional arguments
-img_file = 'dataset\\images.txt'
-gt_dir = 'dataset\\annotations\\instances_train2017.json'
-log_dir_name = 'log'
+img_file = '.\\dataset\\images.txt'
+gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
+base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017\\"
+log_dir_name = '.\\log'
 init_file = "none" 
 EPOCHS = 10
 OPTIMIZER = "default"
@@ -184,7 +185,7 @@ def train():
         """
 
     #create train generator
-    train_generator = generator_from_data_path(img_names, gt_dir, config=cfg)
+    train_generator = generator_from_data_path(img_names, gt_dir, base, config=cfg)
 
 
     #make model parallel if specified

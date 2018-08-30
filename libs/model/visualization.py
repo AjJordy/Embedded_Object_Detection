@@ -11,7 +11,7 @@
 # Date: 25/07/2018
 # Email: jordyfaria0@gmail.com
 
-from main.model.evaluation import filter_batch
+from libs.model.evaluation import filter_batch
 import cv2
 import numpy as np
 

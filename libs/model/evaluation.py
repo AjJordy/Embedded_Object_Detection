@@ -14,7 +14,7 @@
 # Email: christopher@searchink.com
 
 import numpy as np
-import main.utils.utils as utils
+import libs.utils.utils as utils
 
 
 def evaluate(model, generator, steps, config):
@@ -62,7 +62,6 @@ def evaluate(model, generator, steps, config):
     #compute evaluation statistics on whole evaluation set
     print("    Computing statistics...")
     precision, recall, f1,  APs = compute_statistics(all_boxes, all_classes, all_scores, all_gts,  config)
-
     return precision, recall, f1, APs
 
 
@@ -134,7 +133,6 @@ def compute_statistics(all_boxes, all_classes, all_scores, all_gts, config):
     boxes_per_img, boxes_per_gt, all_tps, all_fps, all_fns, is_gt, all_scores = \
     compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_gts, config)
 
-
     #precision and recall for printing
     prec = precision(tp=np.sum(all_tps,axis=0), fp=np.sum(all_fps,axis=0))
     rec = recall(tp=np.sum(all_tps, axis=0), fn=np.sum(all_fns,axis=0))
@@ -151,6 +149,7 @@ def compute_statistics(all_boxes, all_classes, all_scores, all_gts, config):
         print("    Class {}".format(name))
         print("      Precision: {}  Recall: {}".format(prec[i], rec[i]))
         print("      AP: {}".format(APs[i,1]))
+
 
     return prec, rec, f1, APs
 
@@ -179,7 +178,7 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
     all_score_thresholds = [ [] for c in range(config.CLASSES) ]
     is_gt = [ [] for c in range(config.CLASSES) ]
 
-    #print(all_score_thresholds)
+    # print("all_score_thresholds ",all_score_thresholds)
 
     #here we compute the false positives, false negatives and true positives of the network predictions
     #we cannot do everything in a numpy array as each image has a different number of filtered detections
@@ -294,6 +293,7 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
                     #append the predicted score to the predicted class
                     all_score_thresholds[batch_classes[j][index]].append(batch_scores[j][index])
 
+            print("is_gt ",is_gt)
             all_tps.append(tp_per_image)
             all_fns.append(fn_per_image)
             all_fps.append(fp_per_image)
@@ -301,7 +301,7 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
 
     return boxes_per_img , boxes_per_gt, np.stack(all_tps), np.stack(all_fps), np.stack(all_fns), is_gt, all_score_thresholds
 
-def AP( predictions, scores):
+def AP(predictions, scores):
     """
     Computes the  average precision per class, the average precision and the interpolated average precision at 11 points
     :param predictions: list of lists of every class with tp, fp and fn. fps are zeros, the others one, indicating this is a ground truth
@@ -317,13 +317,14 @@ def AP( predictions, scores):
     prec = np.zeros_like(recalls)
 
     #average interpolated precision over all classes
-    iprec =  np.zeros_like(recalls)
+    iprec = np.zeros_like(recalls)
 
     #average precision
-    ap = np.zeros( ( len(predictions), 2))
+    ap = np.zeros((len(predictions), 2))
 
     for i in range(len(predictions)):
-
+        print("predictions ",len(predictions[i]))
+        print("scores ",len(scores[i]))
         #if this is dummy class with no predictions and gts
         if len(predictions[i]) == 0:
             ap[i,0] = 0
@@ -353,6 +354,7 @@ def AP( predictions, scores):
             #interpolated precisions
             inprec =  np.zeros_like(nprec)
 
+            print("nprec ",nprec)
             #maximum
             mx = nprec[-1]
 
@@ -360,14 +362,12 @@ def AP( predictions, scores):
 
             #go backwards through precisions and check if current precision is bigger than last max
             for j in range(len(npos)-2, -1, -1):
-
                 if nprec[j] > mx:
                     mx = nprec[j]
                 inprec[j] = mx
 
             #mean of interpolated precisions
             ap[i,1] = np.mean(inprec)
-
 
             #get 11 indices
             idx =  (np.concatenate( (np.zeros((1)), np.maximum(np.zeros(10), np.around((N-1)/(10) * np.arange(1,11))-1)))).astype(int)
@@ -376,7 +376,7 @@ def AP( predictions, scores):
             iprec += inprec[idx]
             prec += nprec[idx]
 
-
+    print("APS ",ap)
     return ap, prec / len(predictions), iprec / len(predictions)
 
 
