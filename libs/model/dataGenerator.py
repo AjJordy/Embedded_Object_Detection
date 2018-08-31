@@ -44,18 +44,19 @@ def threadsafe_generator(f):
         return threadsafe_iter(f(*a, **kw))
     return g
 
-def input_file(gt_dir):
-    with open(gt_dir,'r') as f:
-        data = json.load(f)
-    print("File read")
-    return data
+# def input_file(gt_dir):
+#     with open(gt_dir,'r') as f:
+#         data = json.load(f)
+#     print("File read")
+#     return data
+
 
 #we could maybe use the standard data generator from keras?
 def read_image_and_gt(img_names, data, config, base):
     '''
     Transform images and send transformed image and label
     :param img_files: list of image files including the path of a batch
-    :param gt_files: list of gt files including the path of a batch
+    :param data: list of gt files including the path of a batch
     :param config: config dict containing various hyperparameters
 
     :return images and annotations
@@ -235,7 +236,7 @@ def read_image_and_gt(img_names, data, config, base):
 
     return imgs, Y
 
-def read_image_and_gt_with_original(img_files, gt_files, config):
+def read_image_and_gt_with_original(img_files, data, base, config):
     '''
     Transform images and send transformed image and label, but also return the image only resized
     :param img_files: list of image files including the path of a batch
@@ -251,47 +252,67 @@ def read_image_and_gt_with_original(img_files, gt_files, config):
     aidxs  = []
 
 
-    #loads annotations from file
-    def load_annotation(gt_file):
+    # def load_annotation(gt_file):
 
-        with open(gt_file, 'r') as f:
-            lines = f.readlines()
-        f.close()
+    #     with open(gt_file, 'r') as f:
+    #         lines = f.readlines()
+    #     f.close()
 
-        annotations = []
+    #     annotations = []
 
-        #each line is an annotation bounding box
-        for line in lines:
-            obj = line.strip().split(' ')
+    #     #each line is an annotation bounding box
+    #     for line in lines:
+    #         obj = line.strip().split(' ')
 
-            #get class
-            try:
-                cls = config.CLASS_TO_IDX[obj[0].lower().strip()]
-                # print cls
-
-
-                #get coordinates
-                xmin = float(obj[4])
-                ymin = float(obj[5])
-                xmax = float(obj[6])
-                ymax = float(obj[7])
+    #         #get class
+    #         try:
+    #             cls = config.CLASS_TO_IDX[obj[0].lower().strip()]
+    #             # print cls
 
 
-                #check for valid bounding boxes
-                assert xmin >= 0.0 and xmin <= xmax, \
-                    'Invalid bounding box x-coord xmin {} or xmax {} at {}' \
-                        .format(xmin, xmax, gt_file)
-                assert ymin >= 0.0 and ymin <= ymax, \
-                    'Invalid bounding box y-coord ymin {} or ymax {} at {}' \
-                        .format(ymin, ymax, gt_file)
+    #             #get coordinates
+    #             xmin = float(obj[4])
+    #             ymin = float(obj[5])
+    #             xmax = float(obj[6])
+    #             ymax = float(obj[7])
 
 
-                #transform to  point + width and height representation
-                x, y, w, h = bbox_transform_inv([xmin, ymin, xmax, ymax])
+    #             #check for valid bounding boxes
+    #             assert xmin >= 0.0 and xmin <= xmax, \
+    #                 'Invalid bounding box x-coord xmin {} or xmax {} at {}' \
+    #                     .format(xmin, xmax, gt_file)
+    #             assert ymin >= 0.0 and ymin <= ymax, \
+    #                 'Invalid bounding box y-coord ymin {} or ymax {} at {}' \
+    #                     .format(ymin, ymax, gt_file)
 
-                annotations.append([x, y, w, h, cls])
-            except:
-                continue
+
+    #             #transform to  point + width and height representation
+    #             x, y, w, h = bbox_transform_inv([xmin, ymin, xmax, ymax])
+
+    #             annotations.append([x, y, w, h, cls])
+    #         except:
+    #             continue
+    #     return annotations
+
+
+    # loads annotations from file
+    def load_annotation():
+        bb = {}
+        for i in range(config.BATCH_SIZE):
+            # search in all json file looking for the 'file_name'
+            # print("len(data[\"images\"]) ",len(data["images"])) 
+            for j in range(len(data["images"])):
+                dir = base + data["images"][j]['file_name']                
+                if(dir == img_files[i]):
+                    bb  = data["annotations"][j]
+                    cls = bb["category_id"]
+            annotations = []
+            x = bb["bbox"][0]
+            y = bb["bbox"][1]
+            w = bb["bbox"][2]
+            h = bb["bbox"][3]
+
+            annotations.append([x, y, w, h, cls])
         return annotations
 
     imgs = np.zeros((config.BATCH_SIZE, config.IMAGE_HEIGHT, config.IMAGE_WIDTH, config.N_CHANNELS))
@@ -299,9 +320,9 @@ def read_image_and_gt_with_original(img_files, gt_files, config):
 
     img_idx = 0
 
-    #iterate files
-    for img_name, gt_name in zip(img_files, gt_files):
-
+    # iterate files
+    # for img_name, gt_name in zip(img_files, gt_files):
+    for img_name in img_files:
         #open img
         img = cv2.imread(img_name).astype(np.float32, copy=False)
 
@@ -317,7 +338,7 @@ def read_image_and_gt_with_original(img_files, gt_files, config):
         img = (img - np.mean(img))/ np.std(img)
       
         # load annotations
-        annotations = load_annotation(gt_name)
+        annotations = load_annotation()
 
 
         #split in classes and boxes
@@ -365,14 +386,14 @@ def read_image_and_gt_with_original(img_files, gt_files, config):
 
         #and store
         imgs[img_idx] = np.asarray(img)
-        #
+        
         img_idx += 1
 
         # scale annotation
         x_scale = config.IMAGE_WIDTH / orig_w
         y_scale = config.IMAGE_HEIGHT / orig_h
 
-        #scale boxes
+        # scale boxes
         bboxes_per_file[:, 0::2] = bboxes_per_file[:, 0::2] * x_scale
         bboxes_per_file[:, 1::2] = bboxes_per_file[:, 1::2] * y_scale
 
@@ -482,7 +503,7 @@ def read_image_and_gt_with_original(img_files, gt_files, config):
 
 
 @threadsafe_generator
-def generator_from_data_path(img_names, gt_dir, base, config, return_filenames=False, shuffle=False ):
+def generator_from_data_path(img_names, data, base, config, return_filenames=False, shuffle=False ):
     """
     Generator that yields (X, Y)
     :param img_names: list of images names with full path
@@ -508,7 +529,7 @@ def generator_from_data_path(img_names, gt_dir, base, config, return_filenames=F
     count = 1
     epoch = 0
 
-    data = input_file(gt_dir)
+    # data = input_file(gt_dir)
 
     while 1:
         epoch += 1
@@ -534,7 +555,7 @@ def generator_from_data_path(img_names, gt_dir, base, config, return_filenames=F
             count += 1
 
 
-def visualization_generator_from_data_path(img_names, gt_names, config, return_filenames=False, shuffle=False ):
+def visualization_generator_from_data_path(img_names, data,base, config, return_filenames=False, shuffle=False ):
     """
     Generator that yields (Images, Labels, unnormalized images)
     :param img_names: list of images names with full path
@@ -543,8 +564,8 @@ def visualization_generator_from_data_path(img_names, gt_names, config, return_f
     :return:
    """
 
-    assert len(img_names) == len(gt_names), "Number of images and ground truths not equal"
-
+    # assert len(img_names) == len(gt_names), "Number of images and ground truths not equal"
+   
     """
     Each epoch will only process an integral number of batch_size
     # but with the shuffling of list at the top of each epoch, we will
@@ -566,13 +587,14 @@ def visualization_generator_from_data_path(img_names, gt_names, config, return_f
         mini_batches_completed = 0
 
         for _ in range(nbatches):
-            #print(i,j)
+            # print(i,j)
             img_names_batch = img_names[i:j]
-            gt_names_batch = gt_names[i:j]
+            # gt_names_batch = gt_names[i:j]     
+                        
 
             try:
                 #get images, ground truths and original color images
-                imgs, gts, imgs_only_resized = read_image_and_gt_with_original(img_names_batch, gt_names_batch, config)
+                imgs, gts, imgs_only_resized = read_image_and_gt_with_original(img_names_batch, data,base, config)
                 mini_batches_completed += 1
                 yield (imgs, gts, imgs_only_resized)
 

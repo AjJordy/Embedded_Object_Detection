@@ -26,12 +26,14 @@ import os
 import time
 import numpy as np
 import argparse
+import json
 
 
 #default values for some variables
 img_file = "dataset\\img_val.txt"
 img_file_test = "dataset\\img_test.txt"
-gt_val_dir = "dataset\\annotations\\instances_val2017.json"
+# gt_val_dir = "dataset\\annotations\\instances_val2017.json"
+gt_val_dir = "dataset\\annotations\\person_keypoints_val2017.json"
 gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
 base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"
 base_test ="D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\test2017\\"
@@ -43,7 +45,7 @@ tensorboard_dir_test = '.\\log\\tensorboard_test'
 TIMEOUT = 20
 EPOCHS = 10
 CUDA_VISIBLE_DEVICES = "1"
-steps = 20
+steps = 3
 GPUS = 1
 STARTWITH = None
 CONFIG = "libs\\config\\squeeze.config"
@@ -306,6 +308,10 @@ def eval():
 
     f.write(header)
 
+    with open(gt_val_dir,'r') as f:
+        data = json.load(f)
+    print("File read") 
+   
     # listening for new checkpoints
     while 1:
 
@@ -343,10 +349,10 @@ def eval():
 
                 # create 2 validation generators, one for metrics and one for object detection evaluation
                 # we have to reset them each time to have the same data, otherwise we'd have to use batch size one.
-                val_generator_1 = generator_from_data_path(img_names, gt_val_dir, base_val, config=cfg)
-                val_generator_2 = generator_from_data_path(img_names, gt_val_dir, base_val, config=cfg)
+                val_generator_1 = generator_from_data_path(img_names, data, base_val, config=cfg)
+                val_generator_2 = generator_from_data_path(img_names, data, base_val, config=cfg)
                 # create a generator for the visualization of bounding boxes
-                vis_generator = visualization_generator_from_data_path(img_names, gt_val_dir, config=cfg)
+                vis_generator = visualization_generator_from_data_path(img_names, data, base_val, config=cfg)
 
                 print("  Evaluate losses...")
                 #compute losses of whole val set

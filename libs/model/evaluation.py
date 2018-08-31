@@ -151,7 +151,7 @@ def compute_statistics(all_boxes, all_classes, all_scores, all_gts, config):
         print("      AP: {}".format(APs[i,1]))
 
 
-    return prec, rec, f1, APs
+    return prec, rec, f1 , APs
 
 
 def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_gts, config):
@@ -293,7 +293,7 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
                     #append the predicted score to the predicted class
                     all_score_thresholds[batch_classes[j][index]].append(batch_scores[j][index])
 
-            print("is_gt ",is_gt)
+            # print("is_gt ",is_gt)
             all_tps.append(tp_per_image)
             all_fns.append(fn_per_image)
             all_fps.append(fp_per_image)
@@ -323,8 +323,9 @@ def AP(predictions, scores):
     ap = np.zeros((len(predictions), 2))
 
     for i in range(len(predictions)):
-        print("predictions ",len(predictions[i]))
-        print("scores ",len(scores[i]))
+        # print("predictions ",len(predictions[i]))
+        # print("scores ",len(scores[i]))
+
         #if this is dummy class with no predictions and gts
         if len(predictions[i]) == 0:
             ap[i,0] = 0
@@ -338,23 +339,29 @@ def AP(predictions, scores):
 
             #unzip
             spreds, sscores = zip(*spreds_and_scores)
+            # print("spreds ", spreds)
+            # print("sscores ",sscores)
 
             #get the indices of gts
             npos = [ t[0] for t in enumerate(spreds) if t[1] > 0 ]
+            # npos = [ t[0] for t in enumerate(sscores) if t[1] > 0 ]
 
             #count gts
             N = len(npos)
+            # print("len(npos) ",len(npos))
 
             #compute the precisions at every gt
             nprec = np.arange(1,N+1) / (np.array(npos)+1)
+            # print("nprec ",nprec)
 
             #store the mean
             ap[i, 0] = np.mean(nprec)
 
+            # print("ap[i,0] ",ap[i, 0])
+
             #interpolated precisions
             inprec =  np.zeros_like(nprec)
-
-            print("nprec ",nprec)
+            
             #maximum
             mx = nprec[-1]
 
@@ -376,7 +383,7 @@ def AP(predictions, scores):
             iprec += inprec[idx]
             prec += nprec[idx]
 
-    print("APS ",ap)
+    print("APS\n",ap)
     return ap, prec / len(predictions), iprec / len(predictions)
 
 

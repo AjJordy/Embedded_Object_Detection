@@ -23,6 +23,7 @@ import keras.backend as K
 from keras.callbacks import TensorBoard, ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau
 from keras.utils import multi_gpu_model
 import pickle
+import json
 import argparse
 import os
 import gc
@@ -30,7 +31,8 @@ import gc
 
 # Global variables can be set by optional arguments
 img_file = '.\\dataset\\images.txt'
-gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
+# gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
+gt_dir = '.\\dataset\\annotations\\person_keypoints_train2017.json'
 base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017\\"
 log_dir_name = '.\\log'
 init_file = "none" 
@@ -184,8 +186,12 @@ def train():
                         #print('reinitializing layer {}.{}'.format(layer.name, v))
         """
 
-    #create train generator
-    train_generator = generator_from_data_path(img_names, gt_dir, base, config=cfg)
+    #create train generator    
+    with open(gt_dir,'r') as f:
+        data = json.load(f)
+    print("File read")   
+
+    train_generator = generator_from_data_path(img_names, data, base, config=cfg)
 
 
     #make model parallel if specified
