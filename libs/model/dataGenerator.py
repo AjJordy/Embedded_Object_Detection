@@ -85,7 +85,7 @@ def read_image_and_gt(img_names, data, config, base):
             y = bb["bbox"][1]
             w = bb["bbox"][2]
             h = bb["bbox"][3]
-
+            # print("x: {} y: {} w: {} h:{} class: {}".format(x,y,w,h,cls))
             annotations.append([x, y, w, h, cls])
         return annotations
 

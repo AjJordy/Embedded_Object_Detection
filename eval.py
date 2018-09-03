@@ -32,7 +32,7 @@ import json
 #default values for some variables
 img_file = "dataset\\img_val.txt"
 img_file_test = "dataset\\img_test.txt"
-# gt_val_dir = "dataset\\annotations\\instances_val2017.json"
+# gt_val_dir = 'dataset\\annotations\\instances_val2017.json'
 gt_val_dir = "dataset\\annotations\\person_keypoints_val2017.json"
 gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
 base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"
@@ -43,9 +43,9 @@ checkpoint_dir = '.\\log\\checkpoints'
 tensorboard_dir = '.\\log\\tensorboard_val'
 tensorboard_dir_test = '.\\log\\tensorboard_test'
 TIMEOUT = 20
-EPOCHS = 10
+EPOCHS = 1 # number of trained models 
 CUDA_VISIBLE_DEVICES = "1"
-steps = 3
+steps = 5
 GPUS = 1
 STARTWITH = None
 CONFIG = "libs\\config\\squeeze.config"
@@ -292,6 +292,10 @@ def eval():
     best_mAP = -np.inf
     time_out_counter = 0
 
+    with open(gt_val_dir,'r') as g:
+        data = json.load(g)
+        g.close()
+    print("File read") 
 
     # use this for saving metrics to a csv
     f = open(log_dir_name +  "\\metrics.csv", "w")
@@ -308,9 +312,7 @@ def eval():
 
     f.write(header)
 
-    with open(gt_val_dir,'r') as f:
-        data = json.load(f)
-    print("File read") 
+   
    
     # listening for new checkpoints
     while 1:
@@ -383,10 +385,13 @@ def eval():
 
 
                 #compute precision recall and mean average precision
-                precision, recall, f1,  AP = evaluate(model=model, 
-                                                      generator=val_generator_2, 
-                                                      steps=nbatches_valid, 
-                                                      config=cfg)
+                precision, recall, f1,  AP, boxes, classes = evaluate(model=model, 
+                                                                      generator=val_generator_2, 
+                                                                      steps=nbatches_valid, 
+                                                                      config=cfg)
+
+                # print("boxes ",len(boxes))
+                # print("classes ",classes)
 
                 #create feed dict for visualization
                 prmap_feed_dict = {}
@@ -422,7 +427,7 @@ def eval():
                 #write everything to tensorboard
                 writer.add_summary(merged.eval(session=sess), len(evaluated_models))
 
-                writer.flush()
+                # writer.flush()
 
                 f.write(line + "\n")
 
@@ -652,10 +657,10 @@ def eval():
                   format(losses[0], losses[4], losses[1], losses[2], losses[3]) )
 
             #compute precision recall and mean average precision
-            precision,recall, f1, AP = evaluate(model=model,
-                                                generator=val_generator_2,
-                                                steps=nbatches_test,
-                                                config=cfg)
+            precision,recall, f1, AP, boxes,classes = evaluate(model=model,
+                                                               generator=val_generator_2,
+                                                               steps=nbatches_test,
+                                                               config=cfg)
 
             #create feed dict for visualization
             prmap_feed_dict = {}
@@ -673,6 +678,8 @@ def eval():
             writer.add_summary(merged.eval(session=sess), i)
             writer.flush()
             i+=1
+
+
 
 
 if __name__ == "__main__":

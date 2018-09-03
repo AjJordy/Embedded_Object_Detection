@@ -49,6 +49,9 @@ def evaluate(model, generator, steps, config):
 
         #filter the batch
         boxes , classes, scores = filter_batch(y_pred, config)
+        # print("boxes ",boxes)
+        # print("classes ",classes)
+        # print("scores", scores)
 
         all_boxes.append(boxes)
         all_classes.append(classes)
@@ -62,7 +65,7 @@ def evaluate(model, generator, steps, config):
     #compute evaluation statistics on whole evaluation set
     print("    Computing statistics...")
     precision, recall, f1,  APs = compute_statistics(all_boxes, all_classes, all_scores, all_gts,  config)
-    return precision, recall, f1, APs
+    return precision, recall, f1, APs, all_boxes, all_classes
 
 
 def filter_batch(y_pred,config):
@@ -147,7 +150,7 @@ def compute_statistics(all_boxes, all_classes, all_scores, all_gts, config):
     print("    Objects {} of {} detected with {} predictions made".format(np.sum(all_tps), np.sum(boxes_per_gt), np.sum(boxes_per_img)))
     for i, name in enumerate(config.CLASS_NAMES):
         print("    Class {}".format(name))
-        print("      Precision: {}  Recall: {}".format(prec[i], rec[i]))
+        print("      Precision: {}  Recall: {}  f1: {}".format(prec[i], rec[i],f1[i]))
         print("      AP: {}".format(APs[i,1]))
 
 
@@ -185,7 +188,7 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
 
     #iterate all batches
     for i in range(len(all_boxes)):
-
+        # print("len(all_boxes) ",len(all_boxes))
         batch_gt = all_gts[i]
 
         batch_classes = all_classes[i]
@@ -198,10 +201,9 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
 
         #print(labels.shape)
 
-
         #iterate images per batch for image level analysis
         for j in range(len(all_boxes[i])):
-
+            # print("len(all_boxes[i]) ",len(all_boxes[i]))
             # add number of detections
             boxes_per_img.append(len(all_boxes[i][j]))
 
@@ -248,17 +250,20 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
                         # check if iou is above threshold, if classes match,
                         # if it has not been assigned before and if the score is bigger than the current best score
                         # if all conditions are satisfied this marked as the current biggest detection
+                        
+                        # print(" AQUI ",iou > config.IOU_THRESHOLD)
+                        if(iou>0): print("iou ",iou)
                         if iou > config.IOU_THRESHOLD \
                         and batch_classes[j][iou_index] == nonzero_labels[k] \
                         and not assigned_idx[iou_index]\
                         and batch_scores[j][iou_index] > current_score:
-
                             #update current score
                             current_score  = batch_scores[j][iou_index]
                             #update idx of best
                             current_idx = iou_index
 
                     #if nothing was assigned to this box add a false negative
+                    print("current_score ",current_score)
                     if current_score < 0:
                         fn_per_image[nonzero_labels[k]] += 1
 
@@ -269,17 +274,18 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
                     else:
                         #otherwise add a true positive for the corresponding class
                         tp_per_image[nonzero_labels[k]] += 1
+                        print("tp_per_image[nonzero_labels[k]] ",tp_per_image[nonzero_labels[k]])
                         # set to ignore assigned box
                         assigned_idx[current_idx] = 1
                         #append it as a gt
                         is_gt[nonzero_labels[k]].append(1)
                         #save threshold
                         all_score_thresholds[nonzero_labels[k]].append(current_score)
-
+                    # print("try")
                 except:
 
                     fn_per_image[nonzero_labels[k]] = len(nonzero_gts[k])
-
+                    # print("except")
 
 
             #calculate false positives, that is boxes that have not been assigned to a gt
@@ -383,7 +389,7 @@ def AP(predictions, scores):
             iprec += inprec[idx]
             prec += nprec[idx]
 
-    print("APS\n",ap)
+    # print("APS\n",ap)
     return ap, prec / len(predictions), iprec / len(predictions)
 
 

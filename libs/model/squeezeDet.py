@@ -61,9 +61,9 @@ class SqueezeDet():
         fire9 = self._fire_layer('fire9', fire8, s1x1=64, e1x1=256, e3x3=256)
 
         # Two extra fire modules that are not trained before
-        # fire10 = self._fire_layer('fire10', fire9, s1x1=96, e1x1=384, e3x3=384)
-        # fire11 = self._fire_layer('fire11', fire10, s1x1=96, e1x1=384, e3x3=384)
-        dropout11 = Dropout(rate=self.config.KEEP_PROB, name='drop11')(pool5)
+        fire10 = self._fire_layer('fire10', fire9, s1x1=96, e1x1=384, e3x3=384)
+        fire11 = self._fire_layer('fire11', fire10, s1x1=96, e1x1=384, e3x3=384)
+        dropout11 = Dropout(rate=self.config.KEEP_PROB, name='drop11')(fire11)
 
         #compute the number of output nodes from number of anchors, classes, confidence score and bounding box corners
         num_output = self.config.ANCHOR_PER_GRID * (self.config.CLASSES + 1 + 4)

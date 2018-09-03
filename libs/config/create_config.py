@@ -67,8 +67,9 @@ def squeezeDet_config(name):
     cfg.N_CHANNELS   = 3
 
     #batch sizes
+    # cfg.BATCH_SIZE and cfg.VISUALIZATION_BATCH_SIZE must be equal
     cfg.BATCH_SIZE = 5
-    cfg.VISUALIZATION_BATCH_SIZE = 6 #16
+    cfg.VISUALIZATION_BATCH_SIZE = 5 
     cfg.STEPS = 10
 
     #SGD + Momentum parameters
@@ -88,7 +89,7 @@ def squeezeDet_config(name):
     cfg.NMS_THRESH       = 0.4
     cfg.PROB_THRESH      = 0.005
     cfg.TOP_N_DETECTION  = 64
-    cfg.IOU_THRESHOLD    = 0.5
+    cfg.IOU_THRESHOLD    = 0.3 # 0.5
     cfg.FINAL_THRESHOLD  = 0.0
 
     #paths

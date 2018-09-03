@@ -37,7 +37,8 @@ base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017\
 log_dir_name = '.\\log'
 init_file = "none" 
 EPOCHS = 10
-OPTIMIZER = "default"
+# OPTIMIZER = "default"
+OPTIMIZER = "adam"
 CUDA_VISIBLE_DEVICES = "0"
 GPUS = 1
 PRINT_TIME = 0
@@ -117,12 +118,13 @@ def train():
     #multiply by number of workers do adjust for increased batch size
     if OPTIMIZER == "adam":
         opt = optimizers.Adam(lr=0.001 * GPUS, clipnorm=cfg.MAX_GRAD_NORM)
-        cfg.LR= 0.001 * GPUS
-    if OPTIMIZER == "rmsprop":
+        cfg.LR= 0.0001 * GPUS
+        print("adam with learning rate ",cfg.LR)
+    elif OPTIMIZER == "rmsprop":
         opt = optimizers.RMSprop(lr=0.001 * GPUS, clipnorm=cfg.MAX_GRAD_NORM)
         cfg.LR= 0.001 * GPUS
 
-    if OPTIMIZER == "adagrad":
+    elif OPTIMIZER == "adagrad":
         opt = optimizers.Adagrad(lr=1.0 * GPUS, clipnorm=cfg.MAX_GRAD_NORM)
         cfg.LR = 1 * GPUS
 

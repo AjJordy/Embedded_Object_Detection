@@ -61,7 +61,7 @@ def visualize(model, generator, config):
     try:
         return np.stack(all_boxes).reshape((-1, config.IMAGE_HEIGHT, config.IMAGE_WIDTH, 3))
     except:
-        return np.zeros( (nbatches*config.BATCH_SIZE, config.IMAGE_HEIGHT, config.IMAGE_WIDTH, 3))
+        return np.zeros((nbatches*config.BATCH_SIZE, config.IMAGE_HEIGHT, config.IMAGE_WIDTH, 3))
 
 
 
