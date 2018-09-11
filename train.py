@@ -29,23 +29,26 @@ import os
 import gc
 
 
-# Global variables can be set by optional arguments
-img_file = '.\\dataset\\images.txt'
-# gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
-gt_dir = '.\\dataset\\annotations\\person_keypoints_train2017.json'
+# --------------------------  Global variables can be set by optional arguments ------------------
+# Paths 
+# img_file = '.\\dataset\\images.txt'
+img_file = '.\\dataset\\backup_train.txt'
+gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
 base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017\\"
+# base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017_clean\\"
+CONFIG = "libs\\config\\squeeze.config"
 log_dir_name = '.\\log'
+
+# Parameters
 init_file = "none" 
-EPOCHS = 10
-# OPTIMIZER = "default"
-OPTIMIZER = "adam"
+EPOCHS = 5
+OPTIMIZER = "adam" # "default"
 CUDA_VISIBLE_DEVICES = "0"
 GPUS = 1
 PRINT_TIME = 0
 REDUCELRONPLATEAU = True
-VERBOSE= False #True
+VERBOSE= False
 
-CONFIG = "libs\\config\\squeeze.config"
 
 def train():
     """
@@ -97,11 +100,7 @@ def train():
     cfg.BATCH_SIZE = cfg.BATCH_SIZE * GPUS
    
     # if STEPS is not None:
-    nbatches_train = cfg.STEPS
-
-    #print some run info
-    print("Number of epochs:  {}".format(EPOCHS))
-    print("Batch size: {}".format(cfg.BATCH_SIZE))
+    nbatches_train = cfg.STEPS   
 
     #tf config and session
     config = tf.ConfigProto(allow_soft_placement=True)
@@ -114,21 +113,23 @@ def train():
     #callbacks
     cb = []
 
-    #set optimizer
-    #multiply by number of workers do adjust for increased batch size
+    # print some run info
+    print("Number of epochs:  {}".format(EPOCHS))
+    print("Batch size: {}".format(cfg.BATCH_SIZE))
+
+    # set optimizer
+    # multiply by number of workers do adjust for increased batch size
     if OPTIMIZER == "adam":
         opt = optimizers.Adam(lr=0.001 * GPUS, clipnorm=cfg.MAX_GRAD_NORM)
-        cfg.LR= 0.0001 * GPUS
+        cfg.LR= 1e-6 * GPUS
         print("adam with learning rate ",cfg.LR)
     elif OPTIMIZER == "rmsprop":
         opt = optimizers.RMSprop(lr=0.001 * GPUS, clipnorm=cfg.MAX_GRAD_NORM)
         cfg.LR= 0.001 * GPUS
-
     elif OPTIMIZER == "adagrad":
         opt = optimizers.Adagrad(lr=1.0 * GPUS, clipnorm=cfg.MAX_GRAD_NORM)
         cfg.LR = 1 * GPUS
-
-    #use default is nothing is given
+    # use default if nothing was given
     else:
         # create sgd with momentum and gradient clipping
         opt= optimizers.SGD(lr=cfg.LEARNING_RATE * GPUS,
@@ -173,7 +174,6 @@ def train():
 
     if init_file != "none":
         print("Weights initialized by name from {}".format(init_file))
-
         load_only_possible_weights(squeeze.model, init_file, verbose=VERBOSE)
         #since these layers already existed in the ckpt they got loaded, you can reinitialized them. TODO set flag for that
 
@@ -194,7 +194,7 @@ def train():
     print("File read")   
 
     train_generator = generator_from_data_path(img_names, data, base, config=cfg)
-
+    # train_generator = data.COCODetection(splits=['instances_train2017'])
 
     #make model parallel if specified
     if GPUS > 1:
@@ -224,7 +224,6 @@ def train():
                                     epochs=EPOCHS,
                                     steps_per_epoch=nbatches_train,
                                     callbacks=cb)
-
     else:
         # add a checkpoint saver
         ckp_saver = ModelCheckpoint(checkpoint_dir + "/model.{epoch:02d}-{loss:.2f}.hdf5",

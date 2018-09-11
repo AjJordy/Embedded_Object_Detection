@@ -29,26 +29,29 @@ import argparse
 import json
 
 
-#default values for some variables
-img_file = "dataset\\img_val.txt"
+# --------------------------  Global variables can be set by optional arguments ------------------
+# Paths
+# img_file = "dataset\\img_val.txt"  # clean
+img_file = "dataset\\backup_val.txt" # original
 img_file_test = "dataset\\img_test.txt"
-# gt_val_dir = 'dataset\\annotations\\instances_val2017.json'
-gt_val_dir = "dataset\\annotations\\person_keypoints_val2017.json"
+gt_val_dir = 'dataset\\annotations\\instances_val2017.json'
 gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
-base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"
+# base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017_clean\\" # clean
+base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"         # original
 base_test ="D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\test2017\\"
-
 log_dir_name = ".\\log"
 checkpoint_dir = '.\\log\\checkpoints'
 tensorboard_dir = '.\\log\\tensorboard_val'
 tensorboard_dir_test = '.\\log\\tensorboard_test'
+CONFIG = "libs\\config\\squeeze.config"
+
+# Parameters
 TIMEOUT = 20
 EPOCHS = 1 # number of trained models 
 CUDA_VISIBLE_DEVICES = "1"
-steps = 5
+steps = 10
 GPUS = 1
 STARTWITH = None
-CONFIG = "libs\\config\\squeeze.config"
 TESTING = False
 
 
@@ -66,24 +69,15 @@ def eval():
         img_names = imgs.read().splitlines()
     imgs.close()
 
-    # with open(gt_file) as gts:
-    #     gt_names = gts.read().splitlines()
-    # gts.close()
-
     #if multigpu support, adjust batch size
     if GPUS > 1:
         cfg.BATCH_SIZE = GPUS * cfg.BATCH_SIZE
-
-
-    # compute number of batches per epoch
-    # nbatches_valid, mod = divmod(len(gt_names), cfg.BATCH_SIZE)
 
     #if a number for steps was given
     if steps is not None:
         nbatches_valid = steps
 
     #set gpu to use if no multigpu
-
     #hide the other gpus so tensorflow only uses this one
     os.environ['CUDA_VISIBLE_DEVICES'] = CUDA_VISIBLE_DEVICES
 
@@ -260,6 +254,8 @@ def eval():
                          nesterov=False, 
                          clipnorm=cfg.MAX_GRAD_NORM)
 
+    adam = optimizers.Adam(lr=0.0001, clipnorm=cfg.MAX_GRAD_NORM)
+
     if GPUS > 1:
         #parallelize model
         model = multi_gpu_model(squeeze.model, gpus=GPUS)
@@ -270,10 +266,16 @@ def eval():
                               squeeze.conf_loss, 
                               squeeze.loss_without_regularization])
 
-
     else:
-    # compile model from squeeze object, loss is not a function of model directly
-        squeeze.model.compile(optimizer=sgd,
+        # compile model from squeeze object, loss is not a function of model directly
+        # squeeze.model.compile(optimizer=sgd,
+        #                       loss=[squeeze.loss],
+        #                       metrics=[squeeze.bbox_loss,
+        #                                squeeze.class_loss,
+        #                                squeeze.conf_loss,
+        #                                squeeze.loss_without_regularization])
+
+        squeeze.model.compile(optimizer=adam,
                               loss=[squeeze.loss],
                               metrics=[squeeze.bbox_loss,
                                        squeeze.class_loss,
@@ -309,7 +311,6 @@ def eval():
                   + name + "_f1;" 
 
     header += "\n"
-
     f.write(header)
 
    

@@ -147,6 +147,8 @@ def compute_statistics(all_boxes, all_classes, all_scores, all_gts, config):
     APs, precs, iprecs = AP(is_gt, all_scores)
 
     #print some info
+    print("prec\n",prec)
+
     print("    Objects {} of {} detected with {} predictions made".format(np.sum(all_tps), np.sum(boxes_per_gt), np.sum(boxes_per_img)))
     for i, name in enumerate(config.CLASS_NAMES):
         print("    Class {}".format(name))
@@ -252,7 +254,8 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
                         # if all conditions are satisfied this marked as the current biggest detection
                         
                         # print(" AQUI ",iou > config.IOU_THRESHOLD)
-                        if(iou>0): print("iou ",iou)
+                        if(iou > 0.1): print("iou ",iou)
+
                         if iou > config.IOU_THRESHOLD \
                         and batch_classes[j][iou_index] == nonzero_labels[k] \
                         and not assigned_idx[iou_index]\
@@ -263,7 +266,7 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
                             current_idx = iou_index
 
                     #if nothing was assigned to this box add a false negative
-                    print("current_score ",current_score)
+                    # print("current_score ",current_score)
                     if current_score < 0:
                         fn_per_image[nonzero_labels[k]] += 1
 
@@ -274,7 +277,6 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
                     else:
                         #otherwise add a true positive for the corresponding class
                         tp_per_image[nonzero_labels[k]] += 1
-                        print("tp_per_image[nonzero_labels[k]] ",tp_per_image[nonzero_labels[k]])
                         # set to ignore assigned box
                         assigned_idx[current_idx] = 1
                         #append it as a gt
@@ -328,6 +330,8 @@ def AP(predictions, scores):
     #average precision
     ap = np.zeros((len(predictions), 2))
 
+    count = 0
+
     for i in range(len(predictions)):
         # print("predictions ",len(predictions[i]))
         # print("scores ",len(scores[i]))
@@ -350,7 +354,6 @@ def AP(predictions, scores):
 
             #get the indices of gts
             npos = [ t[0] for t in enumerate(spreds) if t[1] > 0 ]
-            # npos = [ t[0] for t in enumerate(sscores) if t[1] > 0 ]
 
             #count gts
             N = len(npos)
@@ -368,6 +371,7 @@ def AP(predictions, scores):
             #interpolated precisions
             inprec =  np.zeros_like(nprec)
             
+            # try :
             #maximum
             mx = nprec[-1]
 
@@ -388,7 +392,11 @@ def AP(predictions, scores):
 
             iprec += inprec[idx]
             prec += nprec[idx]
+            # except:
+            #     count +=1
+            #     pass
 
+    # print('count ',count)
     # print("APS\n",ap)
     return ap, prec / len(predictions), iprec / len(predictions)
 

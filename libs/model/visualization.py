@@ -134,7 +134,9 @@ def visualize_dt_and_gt(images, y_true, y_pred, config):
 
             #add rectangle and text
             cv2.rectangle(img, (gt_box[0], gt_box[1]), (gt_box[2], gt_box[3]), (0, 255, 0), 1)
-            cv2.putText(img, config.CLASS_NAMES[int(non_zero_labels[j])], (gt_box[0], gt_box[1]), font, 0.5,
+            # cv2.putText(img, config.CLASS_NAMES[int(non_zero_labels[j])], (gt_box[0], gt_box[1]), font, 0.5,
+            #             (0, 255, 0), 1, cv2.LINE_AA)
+            cv2.putText(img, config.CLASS_ID[str(int(non_zero_labels[j]))], (gt_box[0], gt_box[1]), font, 0.5,
                         (0, 255, 0), 1, cv2.LINE_AA)
 
         #chagne to rgb
