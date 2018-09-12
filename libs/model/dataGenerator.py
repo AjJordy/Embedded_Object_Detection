@@ -44,28 +44,47 @@ def threadsafe_generator(f):
         return threadsafe_iter(f(*a, **kw))
     return g
 
-def load_annotation(data,img_file,base):        
-        annotations = []        
-        try:
-            # search in all json file looking for the 'file_name'        
-            for j in range(len(data["images"])):
-                dir = base + data["images"][j]['file_name']
-                if(dir == img_file): 
-                    index = data["images"][j]['id']
-                    break
 
-            # search in all json file looking for the image's annotations             
-            for j in range(len(data["annotations"])):                                
-                if data['annotations'][j]['image_id'] == index :
-                    bb = data["annotations"][j]
-                    class_id = bb["category_id"]                                        
-                    x = bb["bbox"][0]
-                    y = bb["bbox"][1]
-                    w = bb["bbox"][2]
-                    h = bb["bbox"][3]
+def load_yaml(data, img_file, base, config):
+    annotations = []    
+    for img in data['imageset_bitbots-2018-iran-01']:
+        dir = base + img
+        if img_file == dir:
+            for ann in data['imageset_bitbots-2018-iran-01'][img]['annotations']:
+                try:            
+                    x = ann['center'][0]
+                    y = ann['center'][1]
+                    w = ann['dimensions'][0]
+                    h = ann['dimensions'][1]
+                    class_id = config.CLASS_BITBOT[ann['label']]
                     annotations.append([x, y, w, h, class_id])
-        except:
-            print("bb ",bb)                       
+                except:
+                    pass
+    return annotations
+
+def load_annotation(data,img_file,base):        
+        annotations = []
+        bb = {}        
+        # try:
+        # search in all json file looking for the 'file_name'        
+        for j in range(len(data["images"])):
+            dir = base + data["images"][j]['file_name']            
+            if(dir == img_file): 
+                index = data["images"][j]['id']
+                break
+
+        # search in all json file looking for the image's annotations             
+        for j in range(len(data["annotations"])):                                
+            if data['annotations'][j]['image_id'] == index :
+                bb = data["annotations"][j]
+                class_id = bb["category_id"]                                        
+                x = bb["bbox"][0]
+                y = bb["bbox"][1]
+                w = bb["bbox"][2]
+                h = bb["bbox"][3]
+                annotations.append([x, y, w, h, class_id])
+        # except:
+        #     print("bb ",bb)                       
         return annotations
 
 
@@ -98,8 +117,6 @@ def read_image_and_gt(img_names, data, config, base):
 
     img_idx = 0
 
-    # annotations = load_annotation(data,img_names,base,config)
-
     #iterate files
     for img_name in img_names:
         #open img
@@ -114,8 +131,11 @@ def read_image_and_gt(img_names, data, config, base):
         #store original height and width?
         orig_h, orig_w, _ = [float(v) for v in img.shape]
 
-        # load annotations
-        annotations = load_annotation(data,img_name,base)
+        # load annotations        
+        if config.init_file != 'none':
+            annotations = load_yaml(data, img_name, base, config)
+        else: 
+            annotations = load_annotation(data,img_name,base)
 
         #split in classes and boxes
         labels_per_file = [a[4] for a in annotations]
@@ -283,7 +303,11 @@ def read_image_and_gt_with_original(img_files, data, config,base):
         img = (img - np.mean(img))/ np.std(img)
       
         # load annotations
-        annotations = load_annotation(data,img_name,base)
+        if config.init_file != 'none':
+            annotations = load_yaml(data, img_name, base, config)
+        else: 
+            annotations = load_annotation(data,img_name,base)
+        
 
         #split in classes and boxes
         labels_per_file = [a[4] for a in annotations]

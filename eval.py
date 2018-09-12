@@ -482,14 +482,7 @@ def eval():
         #get test images and gt
         with open(img_file_test) as imgs:
             img_names_test = imgs.read().splitlines()
-        imgs.close()
-
-        # with open(gt_file_test) as gts:
-        #     gt_names_test = gts.read().splitlines()
-        # gts.close()
-
-        # compute number of batches per epoch
-        # nbatches_test, mod = divmod(len(gt_names_test), cfg.BATCH_SIZE)
+        imgs.close()        
 
         #if a number for steps was given
         if steps is not None:

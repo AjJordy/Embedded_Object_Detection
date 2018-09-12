@@ -27,22 +27,15 @@ import json
 import argparse
 import os
 import gc
+import yaml
 
-
-# --------------------------  Global variables can be set by optional arguments ------------------
-# Paths 
-# img_file = '.\\dataset\\images.txt'
-img_file = '.\\dataset\\backup_train.txt'
-gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
-base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017\\"
-# base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017_clean\\"
+""" ----------------  Global variables can be set by optional arguments ------------- """
 CONFIG = "libs\\config\\squeeze.config"
-log_dir_name = '.\\log'
+log_dir_name = 'log'
 
 # Parameters
-init_file = "none" 
-EPOCHS = 5
-OPTIMIZER = "adam" # "default"
+EPOCHS = 10
+OPTIMIZER = 'adam' # "default"
 CUDA_VISIBLE_DEVICES = "0"
 GPUS = 1
 PRINT_TIME = 0
@@ -57,11 +50,7 @@ def train():
 
     #create subdirs for logging of checkpoints and tensorboard stuff
     checkpoint_dir = log_dir_name +"/checkpoints"
-    tb_dir = log_dir_name +"/tensorboard"
-
-    #delete old checkpoints and tensorboard stuff
-    if tf.gfile.Exists(checkpoint_dir):
-        tf.gfile.DeleteRecursively(checkpoint_dir)
+    tb_dir = log_dir_name +"/tensorboard"    
 
     if tf.gfile.Exists(tb_dir):
         tf.gfile.DeleteRecursively(tb_dir)
@@ -69,22 +58,36 @@ def train():
     tf.gfile.MakeDirs(tb_dir)
     tf.gfile.MakeDirs(checkpoint_dir)
 
+    
+
+    #create config object
+    cfg = load_dict(CONFIG)
+
+    #add stuff for documentation to config    
+    cfg.EPOCHS = EPOCHS
+    cfg.OPTIMIZER = OPTIMIZER
+    cfg.CUDA_VISIBLE_DEVICES = CUDA_VISIBLE_DEVICES
+    cfg.GPUS = GPUS
+    cfg.REDUCELRONPLATEAU = REDUCELRONPLATEAU
+
+    if cfg.init_file != 'none':    
+        base = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger160\\160\\'
+        gt_dir = 'imagetagger160\\export_bitbots-2018-iran-01_652.txt'
+        img_file = 'imagetagger160\\images.txt'        
+    else: 
+        img_file = '.\\dataset\\backup_train.txt'
+        gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
+        base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017\\"
+
     #open files with images and ground truths files with full path names
     with open(img_file) as imgs:
         img_names = imgs.read().splitlines()
     imgs.close()
 
 
-    #create config object
-    cfg = load_dict(CONFIG)
-
-    #add stuff for documentation to config
-    cfg.init_file = init_file
-    cfg.EPOCHS = EPOCHS
-    cfg.OPTIMIZER = OPTIMIZER
-    cfg.CUDA_VISIBLE_DEVICES = CUDA_VISIBLE_DEVICES
-    cfg.GPUS = GPUS
-    cfg.REDUCELRONPLATEAU = REDUCELRONPLATEAU
+    #delete old checkpoints and tensorboard stuff
+    if tf.gfile.Exists(checkpoint_dir) and cfg.init_file is 'none':
+        tf.gfile.DeleteRecursively(checkpoint_dir)
 
 
     #set gpu
@@ -120,9 +123,14 @@ def train():
     # set optimizer
     # multiply by number of workers do adjust for increased batch size
     if OPTIMIZER == "adam":
-        opt = optimizers.Adam(lr=0.001 * GPUS, clipnorm=cfg.MAX_GRAD_NORM)
-        cfg.LR= 1e-6 * GPUS
-        print("adam with learning rate ",cfg.LR)
+        if cfg.init_file != 'none':
+            cfg.LR= 1e-6 * GPUS
+            opt = optimizers.Adam(lr=cfg.LR * GPUS, clipnorm=cfg.MAX_GRAD_NORM)            
+            print("adam with learning rate ",cfg.LR)
+        else:
+            cfg.LR= 1e-4 * GPUS
+            opt = optimizers.Adam(lr=cfg.LR * GPUS, clipnorm=cfg.MAX_GRAD_NORM)            
+            print("adam with learning rate ",cfg.LR)            
     elif OPTIMIZER == "rmsprop":
         opt = optimizers.RMSprop(lr=0.001 * GPUS, clipnorm=cfg.MAX_GRAD_NORM)
         cfg.LR= 0.001 * GPUS
@@ -172,11 +180,15 @@ def train():
     if VERBOSE:
         print(squeeze.model.summary())
 
-    if init_file != "none":
-        print("Weights initialized by name from {}".format(init_file))
-        load_only_possible_weights(squeeze.model, init_file, verbose=VERBOSE)
-        #since these layers already existed in the ckpt they got loaded, you can reinitialized them. TODO set flag for that
+    if cfg.init_file != "none":
+        print("Weights initialized by name from {}".format(cfg.init_file))
+        load_only_possible_weights(squeeze.model, cfg.init_file, verbose=VERBOSE)
 
+        with open(gt_dir) as g:    
+            data = yaml.load(g)
+        g.close()
+        print("yaml read")
+        #since these layers already existed in the ckpt they got loaded, you can reinitialized them. TODO set flag for that
         """
         for layer in squeeze.model.layers:
             for v in layer.__dict__:
@@ -187,14 +199,16 @@ def train():
                         initializer_method.run(session=sess)
                         #print('reinitializing layer {}.{}'.format(layer.name, v))
         """
+    else:
+        #create train generator    
+        with open(gt_dir,'r') as f:
+            data = json.load(f)
+        f.close()
+        print("File read")
 
-    #create train generator    
-    with open(gt_dir,'r') as f:
-        data = json.load(f)
-    print("File read")   
+    
 
     train_generator = generator_from_data_path(img_names, data, base, config=cfg)
-    # train_generator = data.COCODetection(splits=['instances_train2017'])
 
     #make model parallel if specified
     if GPUS > 1:
@@ -286,9 +300,7 @@ if __name__ == "__main__":
     if args.epochs is not None:
         EPOCHS = args.epochs
     if args.optimizer is not None:
-        OPTIMIZER = args.optimizer.lower()
-    if args.init is not None:
-        init_file = args.init
+        OPTIMIZER = args.optimizer.lower()    
     if args.gpus is not None:
         GPUS= args.gpus
     if args.reducelr is not None:

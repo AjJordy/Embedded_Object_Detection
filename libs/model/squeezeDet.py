@@ -57,13 +57,13 @@ class SqueezeDet():
         pool5 = MaxPool2D(pool_size=(3, 3), strides=(2, 2), padding='SAME', name="pool5")(fire5)
         fire6 = self._fire_layer('fire6', pool5, s1x1=48, e1x1=192, e3x3=192)
         fire7 = self._fire_layer('fire7', fire6, s1x1=48, e1x1=192, e3x3=192)
-        fire8 = self._fire_layer('fire8', fire7, s1x1=64, e1x1=256, e3x3=256)
-        fire9 = self._fire_layer('fire9', fire8, s1x1=64, e1x1=256, e3x3=256)
+        # fire8 = self._fire_layer('fire8', fire7, s1x1=64, e1x1=256, e3x3=256)
+        # fire9 = self._fire_layer('fire9', fire8, s1x1=64, e1x1=256, e3x3=256)
 
         # Two extra fire modules that are not trained before
-        fire10 = self._fire_layer('fire10', fire9, s1x1=96, e1x1=384, e3x3=384)
-        fire11 = self._fire_layer('fire11', fire10, s1x1=96, e1x1=384, e3x3=384)
-        dropout11 = Dropout(rate=self.config.KEEP_PROB, name='drop11')(fire11)
+        # fire10 = self._fire_layer('fire10', fire9, s1x1=96, e1x1=384, e3x3=384)
+        # fire11 = self._fire_layer('fire11', fire10, s1x1=96, e1x1=384, e3x3=384)
+        dropout11 = Dropout(rate=self.config.KEEP_PROB, name='drop11')(fire7)
 
         #compute the number of output nodes from number of anchors, classes, confidence score and bounding box corners
         num_output = self.config.ANCHOR_PER_GRID * (self.config.CLASSES + 1 + 4)
