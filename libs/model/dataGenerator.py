@@ -10,6 +10,7 @@
 # Author: Jordy A. Faria de Araújo
 # Date: 25/07/2018
 # Email: jordyfaria0@gmail.com
+# Github: AjJordy
 
 import sys
 import threading
@@ -46,46 +47,40 @@ def threadsafe_generator(f):
 
 
 def load_yaml(data, img_file, base, config):
-    annotations = []    
+    annotations = []       
     for img in data['imageset_bitbots-2018-iran-01']:
         dir = base + img
         if img_file == dir:
             for ann in data['imageset_bitbots-2018-iran-01'][img]['annotations']:
-                try:            
-                    x = ann['center'][0]
-                    y = ann['center'][1]
-                    w = ann['dimensions'][0]
-                    h = ann['dimensions'][1]
-                    class_id = config.CLASS_BITBOT[ann['label']]
-                    annotations.append([x, y, w, h, class_id])
-                except:
-                    pass
+                x = ann['center'][0]
+                y = ann['center'][1]
+                w = ann['dimensions'][0]
+                h = ann['dimensions'][1]
+                class_id = config.CLASS_BITBOT[ann['label']]
+                annotations.append([x, y, w, h, class_id])
+    
     return annotations
 
-def load_annotation(data,img_file,base):        
-        annotations = []
-        bb = {}        
-        # try:
-        # search in all json file looking for the 'file_name'        
-        for j in range(len(data["images"])):
-            dir = base + data["images"][j]['file_name']            
-            if(dir == img_file): 
-                index = data["images"][j]['id']
-                break
-
-        # search in all json file looking for the image's annotations             
-        for j in range(len(data["annotations"])):                                
-            if data['annotations'][j]['image_id'] == index :
-                bb = data["annotations"][j]
-                class_id = bb["category_id"]                                        
-                x = bb["bbox"][0]
-                y = bb["bbox"][1]
-                w = bb["bbox"][2]
-                h = bb["bbox"][3]
-                annotations.append([x, y, w, h, class_id])
-        # except:
-        #     print("bb ",bb)                       
-        return annotations
+def load_annotation(data,img_file,base):     
+    annotations = [] 
+    # search in all json file looking for the 'file_name'        
+    for j in range(len(data["images"])):
+        dir = base + data["images"][j]['file_name']            
+        if(dir == img_file): 
+            index = data["images"][j]['id']
+            break
+    # search in all json file looking for the image's annotations             
+    for j in range(len(data["annotations"])):                                
+        if data['annotations'][j]['image_id'] == index :
+            bb = data["annotations"][j]
+            class_id = bb["category_id"]                                        
+            x = bb["bbox"][0]
+            y = bb["bbox"][1]
+            w = bb["bbox"][2]
+            h = bb["bbox"][3]
+            annotations.append([x, y, w, h, class_id])
+                        
+    return annotations
 
 
 #we could maybe use the standard data generator from keras?
@@ -122,26 +117,27 @@ def read_image_and_gt(img_names, data, config, base):
         #open img
         img = cv2.imread(img_name).astype(np.float32, copy=False)
 
+        #store original height and width?
+        orig_h, orig_w, _ = [float(v) for v in img.shape]
+
         # scale image
         img = cv2.resize(img, (config.IMAGE_WIDTH, config.IMAGE_HEIGHT))
 
         #subtract means
-        img = (img - np.mean(img))/ np.std(img)
-
-        #store original height and width?
-        orig_h, orig_w, _ = [float(v) for v in img.shape]
+        img = (img - np.mean(img))/ np.std(img)        
 
         # load annotations        
         if config.init_file != 'none':
             annotations = load_yaml(data, img_name, base, config)
         else: 
-            annotations = load_annotation(data,img_name,base)
+            # annotations = load_annotation(data,img_name,base)
+            annotations = data[img_name]
 
         #split in classes and boxes
         labels_per_file = [a[4] for a in annotations]
 
         bboxes_per_file = np.array([a[0:4]for a in annotations])
-
+        
         #and store
         imgs[img_idx] = np.asarray(img)
         img_idx += 1
@@ -150,12 +146,9 @@ def read_image_and_gt(img_names, data, config, base):
         x_scale = config.IMAGE_WIDTH / orig_w
         y_scale = config.IMAGE_HEIGHT / orig_h
 
-        #scale boxes
-        try:
-            bboxes_per_file[:, 0::2] = bboxes_per_file[:, 0::2] * x_scale
-            bboxes_per_file[:, 1::2] = bboxes_per_file[:, 1::2] * y_scale
-        except:
-            continue
+        #scale boxes        
+        bboxes_per_file[:, 0::2] = bboxes_per_file[:, 0::2] * x_scale
+        bboxes_per_file[:, 1::2] = bboxes_per_file[:, 1::2] * y_scale             
 
 
         bboxes.append(bboxes_per_file)
@@ -295,7 +288,7 @@ def read_image_and_gt_with_original(img_files, data, config,base):
         orig_h, orig_w, _ = [float(v) for v in img.shape]
 
         # scale image
-        img = cv2.resize( img, (config.IMAGE_WIDTH, config.IMAGE_HEIGHT))
+        img = cv2.resize(img, (config.IMAGE_WIDTH, config.IMAGE_HEIGHT))
 
         imgs_only_resized[img_idx] = img
 
@@ -306,15 +299,16 @@ def read_image_and_gt_with_original(img_files, data, config,base):
         if config.init_file != 'none':
             annotations = load_yaml(data, img_name, base, config)
         else: 
-            annotations = load_annotation(data,img_name,base)
+            # annotations = load_annotation(data,img_name,base)
+            annotations = data[img_name]
         
 
         #split in classes and boxes
         labels_per_file = [a[4] for a in annotations]
         bboxes_per_file = np.array([a[0:4] for a in annotations])
 
-        #TODO enable dynamic Data Augmentation
-        """
+        
+        """ #TODO enable dynamic Data Augmentation
         if config.DATA_AUGMENTATION:
             assert mc.DRIFT_X >= 0 and mc.DRIFT_Y > 0, \
                 'mc.DRIFT_X and mc.DRIFT_Y must be >= 0'
@@ -354,17 +348,16 @@ def read_image_and_gt_with_original(img_files, data, config,base):
         
         img_idx += 1
 
+       
         # scale annotation
         x_scale = config.IMAGE_WIDTH / orig_w
-        y_scale = config.IMAGE_HEIGHT / orig_h
+        y_scale = config.IMAGE_HEIGHT / orig_h   
 
-        try:
-            # scale boxes
-            bboxes_per_file[:, 0::2] = bboxes_per_file[:, 0::2] * x_scale
-            bboxes_per_file[:, 1::2] = bboxes_per_file[:, 1::2] * y_scale
-        except:
-            print('bboxes per file')
-            continue
+       
+        # scale boxes
+        bboxes_per_file[:, 0::2] = bboxes_per_file[:, 0::2] * x_scale
+        bboxes_per_file[:, 1::2] = bboxes_per_file[:, 1::2] * y_scale
+       
 
         bboxes.append(bboxes_per_file)
 
@@ -495,6 +488,7 @@ def generator_from_data_path(img_names, data, base, config, return_filenames=Fal
     """
 
     nbatches, n_skipped_per_epoch = divmod(len(img_names), config.BATCH_SIZE)
+    print("nbatches ",nbatches)
     count = 1
     epoch = 0
 
@@ -504,14 +498,15 @@ def generator_from_data_path(img_names, data, base, config, return_filenames=Fal
         epoch += 1
         i, j = 0, config.BATCH_SIZE
 
-        for _ in range(nbatches):
+        for _ in range(nbatches):            
             img_names_batch = img_names[i:j]            
             try:
                 #get images and ground truths                
                 imgs, gts = read_image_and_gt(img_names_batch, data, config,base)
+                print("len ",len(gts))
                 yield (imgs, gts)
-            except IOError as err:
-                print("IOError ", err)
+            except:
+                print("\nError\n")
                 count -= 1
             i = j
             j += config.BATCH_SIZE
@@ -550,8 +545,8 @@ def visualization_generator_from_data_path(img_names, data,base, config, return_
                 #get images, ground truths and original color images
                 imgs, gts, imgs_only_resized = read_image_and_gt_with_original(img_names_batch, data, config, base)
                 yield (imgs, gts, imgs_only_resized)
-            except IOError as err:
-                print("IOError ",err)
+            except:
+                print("\nError\n")
                 count -= 1
 
             i = j

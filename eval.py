@@ -10,6 +10,7 @@
 # Author: Jordy A. Faria de Araújo
 # Date: 25/07/2018
 # Email: jordyfaria0@gmail.com
+# Github: AjJordy
 
 
 from libs.model.squeezeDet import  SqueezeDet
@@ -31,14 +32,16 @@ import json
 
 # --------------------------  Global variables can be set by optional arguments ------------------
 # Paths
-# img_file = "dataset\\img_val.txt"  # clean
-img_file = "dataset\\backup_val.txt" # original
-img_file_test = "dataset\\img_test.txt"
-gt_val_dir = 'dataset\\annotations\\instances_val2017.json'
-gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
-# base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017_clean\\" # clean
-base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"         # original
+base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"
 base_test ="D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\test2017\\"
+
+# img_file = "dataset\\backup_val.txt" 
+img_file = "dataset\\img_val.txt" 
+img_file_test = "dataset\\img_test.txt"
+# gt_val_dir = 'dataset\\annotations\\instances_val2017.json'
+gt_val_dir = 'dataset\\annotations\\ann_val_clean.json'
+gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
+
 log_dir_name = ".\\log"
 checkpoint_dir = '.\\log\\checkpoints'
 tensorboard_dir = '.\\log\\tensorboard_val'
@@ -49,10 +52,11 @@ CONFIG = "libs\\config\\squeeze.config"
 TIMEOUT = 20
 EPOCHS = 1 # number of trained models 
 CUDA_VISIBLE_DEVICES = "1"
-steps = 10
+steps = None
 GPUS = 1
 STARTWITH = None
 TESTING = False
+OPTIMIZER = "adam"
 
 
 def eval():
@@ -76,6 +80,8 @@ def eval():
     #if a number for steps was given
     if steps is not None:
         nbatches_valid = steps
+    else:
+        nbatches_valid = divmod(len(img_names), cfg.BATCH_SIZE)
 
     #set gpu to use if no multigpu
     #hide the other gpus so tensorflow only uses this one
@@ -267,20 +273,23 @@ def eval():
                               squeeze.loss_without_regularization])
 
     else:
-        # compile model from squeeze object, loss is not a function of model directly
-        # squeeze.model.compile(optimizer=sgd,
-        #                       loss=[squeeze.loss],
-        #                       metrics=[squeeze.bbox_loss,
-        #                                squeeze.class_loss,
-        #                                squeeze.conf_loss,
-        #                                squeeze.loss_without_regularization])
-
-        squeeze.model.compile(optimizer=adam,
-                              loss=[squeeze.loss],
-                              metrics=[squeeze.bbox_loss,
-                                       squeeze.class_loss,
-                                       squeeze.conf_loss,
-                                       squeeze.loss_without_regularization])
+        # compile model from squeeze object, loss is not a function of model directly        
+        if OPTIMIZER == "adam":
+            print("adam")
+            squeeze.model.compile(optimizer=adam,
+                                  loss=[squeeze.loss],
+                                  metrics=[squeeze.bbox_loss,
+                                           squeeze.class_loss,
+                                           squeeze.conf_loss,
+                                           squeeze.loss_without_regularization])
+        else:
+            print("sgd")
+            squeeze.model.compile(optimizer=sgd,
+                                  loss=[squeeze.loss],
+                                  metrics=[squeeze.bbox_loss,
+                                           squeeze.class_loss,
+                                           squeeze.conf_loss,
+                                           squeeze.loss_without_regularization]) 
 
         model = squeeze.model
     # models already evaluated
@@ -358,14 +367,14 @@ def eval():
                 vis_generator = visualization_generator_from_data_path(img_names, data, base_val, config=cfg)
 
                 print("  Evaluate losses...")
-                #compute losses of whole val set
+                # compute losses of whole val set
                 losses = model.evaluate_generator(val_generator_1, 
                                                   steps=nbatches_valid, 
                                                   max_queue_size=10,
                                                   use_multiprocessing=False)
 
 
-                #manually add losses to tensorboard
+                # manually add losses to tensorboard
                 sess.run(loss_assign_ops , {loss_placeholder: losses[0],
                                             loss_without_regularization_placeholder: losses[4],
                                             conf_loss_placeholder: losses[3],
@@ -429,9 +438,7 @@ def eval():
                 writer.add_summary(merged.eval(session=sess), len(evaluated_models))
 
                 # writer.flush()
-
                 f.write(line + "\n")
-
                 f.flush()
 
                 #mark as evaluated

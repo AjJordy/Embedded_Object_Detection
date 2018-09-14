@@ -15,6 +15,8 @@ from libs.model.evaluation import filter_batch, filter_prediction
 
 CONFIG = "libs\\config\\squeeze.config"
 
+init_file = "log\\model.10-8.73.hdf5"
+
 config = tf.ConfigProto(allow_soft_placement=True)
 sess = tf.Session(config=config)
 K.set_session(sess)
@@ -32,7 +34,7 @@ squeeze.model.compile(optimizer=adam,
 	                           squeeze.loss_without_regularization])
 
 model = squeeze.model
-load_only_possible_weights(model, cfg.init_file, verbose=False)
+load_only_possible_weights(model, init_file, verbose=False)
 
 
 cap = cv2.VideoCapture(0)
@@ -48,11 +50,11 @@ while True:
 	start_time = time.time() # start time of the loop
 	predictions = model.predict(img)#,batch_size=None, verbose=0, steps=None)
 	boxes , classes, scores = filter_batch(predictions, cfg)	
-	print("boxes ",boxes)
-	print("classes ",classes)
-	print("scores ",scores)
+	# print("boxes ",boxes)
+	# print("classes ",classes)
+	# print("scores ",scores)
 	
-	# print("FPS: ", 1.0 / (time.time() - start_time)) # FPS = 1 / time to process loop
+	print("FPS: ", 1.0 / (time.time() - start_time)) # FPS = 1 / time to process loop
 	cv2.waitKey(10)
 
 cap.release()

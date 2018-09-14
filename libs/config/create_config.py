@@ -10,6 +10,7 @@
 # Author: Jordy A. Faria de Araújo
 # Date: 25/07/2018
 # Email: jordyfaria0@gmail.com
+# Github: AjJordy
 
 
 """ Model configuration for COCO 2017 dataset """
@@ -23,16 +24,16 @@ def squeezeDet_config(name):
     """Specify the parameters to tune below."""
     cfg = edict()
 
-    # cfg.init_file = 'none'
-    cfg.init_file = 'log\\model.10-32.74.hdf5' 
+    cfg.init_file = 'none'
+    # cfg.init_file = 'log\\model.10-32.74.hdf5' 
 
-    if cfg.init_file is not 'none': 
-        print("init_file")
+    if cfg.init_file != 'none':       
         """Dataset imagetagger """
         cfg.CLASS_BITBOT =  {'goalpost':0,'ball':1,'goal':2,'robot':3,'obstacle':4,'line':5}
         cfg.CLASS_NAMES = ['goalpost','ball','goal','robot','obstacle','line']
         cfg.IDS = [0,1,2,3,4,5]
         cfg.CLASSES = 6 
+        print("init_file")
 
     else:
         """ Dataset COCO full """
@@ -71,8 +72,9 @@ def squeezeDet_config(name):
                         '77':'cell_phone','78':'microwave','79':'oven','80':'toaster','81':'sink',
                         '82':'refrigerator','84':'book','85':'clock','86':'vase','87':'scissors',
                         '88':'teddy_bear','89':'hair_drier','90':'toothbrush'}
+        print("COCO")
 
-        # """ Dataset COCO clean """
+        # """ Dataset COCO smaller """
         # cfg.CLASS_NAMES = ['person', 'bicycle', 'car', 'motorcycle','sports_ball',
         #                    'laptop','mouse','remote','cell_phone','microwave',
         #                    'toaster','refrigerator','hair_drier']
@@ -81,6 +83,8 @@ def squeezeDet_config(name):
         #                 '37':'sports_ball','73':'laptop','74':'mouse','75':'remote',
         #                 '77':'cell_phone','78':'microwave','80':'toaster','82':'refrigerator',
         #                 '89':'hair_drier'}
+
+
         # number of categories to classify
         # it's 90 because the max value of the IDS is 90, but we have only 80 classes
         cfg.CLASSES = 91 # len(cfg.CLASS_NAMES) == 80    
@@ -105,9 +109,9 @@ def squeezeDet_config(name):
 
     #batch sizes
     # cfg.BATCH_SIZE and cfg.VISUALIZATION_BATCH_SIZE must be equal
-    cfg.BATCH_SIZE = 1#8
-    cfg.VISUALIZATION_BATCH_SIZE = 1#8 
-    cfg.STEPS = 10
+    cfg.BATCH_SIZE = 5 # 8 
+    cfg.VISUALIZATION_BATCH_SIZE = 5 # 8
+    # cfg.STEPS = 10
 
     #SGD + Momentum parameters
     cfg.WEIGHT_DECAY = 0.001
@@ -121,7 +125,6 @@ def squeezeDet_config(name):
     cfg.LOSS_COEF_CONF_NEG = 100.0
     cfg.LOSS_COEF_CLASS = 1.0
 
-
     #thesholds for evaluation
     cfg.NMS_THRESH = 0.4
     cfg.PROB_THRESH = 0.005
@@ -134,8 +137,8 @@ def squeezeDet_config(name):
                                 [ 224., 108.], [  78., 170.], [  72.,  43.]])
 
     cfg.ANCHOR_PER_GRID = len(cfg.ANCHOR_SEED)
-    cfg.ANCHORS_WIDTH   = 78 # 624 / 16 = 48 
-    cfg.ANCHORS_HEIGHT  = 24 # 768 / 16 = 39 
+    cfg.ANCHORS_WIDTH = 78 # 624 / 16 = 48 
+    cfg.ANCHORS_HEIGHT = 24 # 768 / 16 = 39 
     # 78 * 24 = 1872 
     # 48 * 39 = 1872     
 

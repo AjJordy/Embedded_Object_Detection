@@ -49,10 +49,7 @@ def evaluate(model, generator, steps, config):
 
         #filter the batch
         boxes , classes, scores = filter_batch(y_pred, config)
-        # print("boxes ",boxes)
-        # print("classes ",classes)
-        # print("scores", scores)
-
+       
         all_boxes.append(boxes)
         all_classes.append(classes)
         all_scores.append(scores)

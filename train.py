@@ -10,6 +10,8 @@
 # Author: Jordy A. Faria de Araújo
 # Date: 25/07/2018
 # Email: jordyfaria0@gmail.com
+# Github: AjJordy
+
 
 from libs.model.squeezeDet import  SqueezeDet
 from libs.model.dataGenerator import generator_from_data_path, read_image_and_gt
@@ -48,20 +50,23 @@ def train():
     Def trains a Keras model of SqueezeDet and stores the checkpoint after each epoch
     """
 
+    #create config object
+    cfg = load_dict(CONFIG)
+
     #create subdirs for logging of checkpoints and tensorboard stuff
     checkpoint_dir = log_dir_name +"/checkpoints"
-    tb_dir = log_dir_name +"/tensorboard"    
+    tb_dir = log_dir_name +"/tensorboard" 
+
+    #delete old checkpoints and tensorboard stuff
+    if tf.gfile.Exists(checkpoint_dir) and cfg.init_file == 'none':
+        tf.gfile.DeleteRecursively(checkpoint_dir)   
 
     if tf.gfile.Exists(tb_dir):
         tf.gfile.DeleteRecursively(tb_dir)
 
     tf.gfile.MakeDirs(tb_dir)
-    tf.gfile.MakeDirs(checkpoint_dir)
+    tf.gfile.MakeDirs(checkpoint_dir) 
 
-    
-
-    #create config object
-    cfg = load_dict(CONFIG)
 
     #add stuff for documentation to config    
     cfg.EPOCHS = EPOCHS
@@ -73,21 +78,19 @@ def train():
     if cfg.init_file != 'none':    
         base = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger160\\160\\'
         gt_dir = 'imagetagger160\\export_bitbots-2018-iran-01_652.txt'
-        img_file = 'imagetagger160\\images.txt'        
+        img_file = 'imagetagger160\\images.txt'
+        print("init")        
     else: 
         img_file = '.\\dataset\\backup_train.txt'
-        gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
+        # gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
+        gt_dir = '.\\dataset\\annotations\\ann_train_clean.json'
         base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017\\"
+        print("COCO")
 
     #open files with images and ground truths files with full path names
     with open(img_file) as imgs:
         img_names = imgs.read().splitlines()
     imgs.close()
-
-
-    #delete old checkpoints and tensorboard stuff
-    if tf.gfile.Exists(checkpoint_dir) and cfg.init_file is 'none':
-        tf.gfile.DeleteRecursively(checkpoint_dir)
 
 
     #set gpu
@@ -103,7 +106,8 @@ def train():
     cfg.BATCH_SIZE = cfg.BATCH_SIZE * GPUS
    
     # if STEPS is not None:
-    nbatches_train = cfg.STEPS   
+    nbatches_train = divmod(len(img_names), cfg.BATCH_SIZE) # cfg.STEPS
+
 
     #tf config and session
     config = tf.ConfigProto(allow_soft_placement=True)
@@ -173,7 +177,6 @@ def train():
                                     verbose=1,
                                     patience=5,
                                     min_lr=0.0)
-
         cb.append(reduce_lr)
 
     # print keras model summary
@@ -188,8 +191,7 @@ def train():
             data = yaml.load(g)
         g.close()
         print("yaml read")
-        #since these layers already existed in the ckpt they got loaded, you can reinitialized them. TODO set flag for that
-        """
+        """ # since these layers already existed in the ckpt they got loaded, you can reinitialized them. TODO set flag for that
         for layer in squeeze.model.layers:
             for v in layer.__dict__:
                 v_arg = getattr(layer, v)
@@ -205,10 +207,10 @@ def train():
             data = json.load(f)
         f.close()
         print("File read")
-
     
 
     train_generator = generator_from_data_path(img_names, data, base, config=cfg)
+
 
     #make model parallel if specified
     if GPUS > 1:
