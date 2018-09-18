@@ -19,6 +19,7 @@ import numpy as np
 import random
 import json
 from libs.utils.utils import bbox_transform_inv, batch_iou, sparse_to_dense
+from libs.model.visualization import bbox_transform_single_box
 
 
 class threadsafe_iter:
@@ -39,7 +40,7 @@ class threadsafe_iter:
 
 
 def threadsafe_generator(f):
-    """A decorator that takes a generator function and makes it thread-safe.
+    """ A decorator that takes a generator function and makes it thread-safe.
     """
     def g(*a, **kw):
         return threadsafe_iter(f(*a, **kw))
@@ -61,6 +62,8 @@ def load_yaml(data, img_file, base, config):
     
     return annotations
 
+
+""" Load coco's original annotations 
 def load_annotation(data,img_file,base):     
     annotations = [] 
     # search in all json file looking for the 'file_name'        
@@ -80,6 +83,32 @@ def load_annotation(data,img_file,base):
             h = bb["bbox"][3]
             annotations.append([x, y, w, h, class_id])
                         
+    return annotations
+"""
+
+def load_annotation(data,img_name):
+    annotations = []
+    convert = {'1':'0', # person
+               '2':'1', # bicycle
+               '3':'2', # car
+               '4':'3', # motorcycle
+               '37':'4', # sport_ball
+               '73':'5', # laptop
+               '74':'6', # mouse
+               '75':'7', # remote
+               '77':'8', # cell_phone
+               '78':'9', # microwave
+               '80':'10', # toaster
+               '82':'11', # refrigerator
+               '89':'12'} # hair_drier
+
+    
+    for bb in data[img_name]:
+        ann = bb[:]          
+        ann[0] = bb[0] + (bb[2] / 2) # cx = x + w/2 
+        ann[1] = bb[1] + (bb[3] / 2) # cy = y + h/2
+        ann[4] = int(convert[str(bb[4])]) # Class id
+        annotations.append(ann)
     return annotations
 
 
@@ -115,11 +144,12 @@ def read_image_and_gt(img_names, data, config, base):
     #iterate files
     for img_name in img_names:
         #open img
-        img = cv2.imread(img_name).astype(np.float32, copy=False)
+        
+        img = cv2.imread(img_name).astype(np.float32, copy=False)        
 
         #store original height and width?
         orig_h, orig_w, _ = [float(v) for v in img.shape]
-
+      
         # scale image
         img = cv2.resize(img, (config.IMAGE_WIDTH, config.IMAGE_HEIGHT))
 
@@ -130,8 +160,8 @@ def read_image_and_gt(img_names, data, config, base):
         if config.init_file != 'none':
             annotations = load_yaml(data, img_name, base, config)
         else: 
-            # annotations = load_annotation(data,img_name,base)
-            annotations = data[img_name]
+            annotations = load_annotation(data,img_name)
+            # annotations = data[img_name]
 
         #split in classes and boxes
         labels_per_file = [a[4] for a in annotations]
@@ -157,15 +187,15 @@ def read_image_and_gt(img_names, data, config, base):
         aidx_set = set()
 
 
-        #iterate all bounding boxes for a file
+        # iterate all bounding boxes for a file
         for i in range(len(bboxes_per_file)):
-            #compute overlaps of bounding boxes and anchor boxes
+            # compute overlaps of bounding boxes and anchor boxes
             overlaps = batch_iou(config.ANCHOR_BOX, bboxes_per_file[i])
 
-            #achor box index
+            # achor box index
             aidx = len(config.ANCHOR_BOX)
 
-            #sort for biggest overlaps
+            # sort for biggest overlaps
             for ov_idx in np.argsort(overlaps)[::-1]:
                 #when overlap is zero break
                 if overlaps[ov_idx] <= 0:
@@ -179,19 +209,19 @@ def read_image_and_gt(img_names, data, config, base):
             # if the largest available overlap is 0, choose the anchor box with the one that has the
             # smallest square distance
             if aidx == len(config.ANCHOR_BOX):
-                dist = np.sum(np.square(bboxes_per_file[i] - config.ANCHOR_BOX), axis=1) # Somatório das distancias euclidiana dos centros e do formato
+                dist = np.sum(np.square(bboxes_per_file[i] - config.ANCHOR_BOX), axis=1) 
                 for dist_idx in np.argsort(dist):
-                    if dist_idx not in aidx_set: # Se a distancia ainda não tiver sido contabilizada, é adicionado a lista
+                    if dist_idx not in aidx_set: 
                         aidx_set.add(dist_idx)
                         aidx = dist_idx
                         break
 
 
-            #compute deltas for regression
+            # compute deltas for regression
             box_cx, box_cy, box_w, box_h = bboxes_per_file[i]
             delta = [0] * 4
-            delta[0] = (box_cx - config.ANCHOR_BOX[aidx][0]) / config.ANCHOR_BOX[aidx][2] # box_x - anchor_box_x / anchor_shapes
-            delta[1] = (box_cy - config.ANCHOR_BOX[aidx][1]) / config.ANCHOR_BOX[aidx][3] # box_y - anchor_box_y / anchor_shapes
+            delta[0] = (box_cx - config.ANCHOR_BOX[aidx][0]) / config.ANCHOR_BOX[aidx][2] 
+            delta[1] = (box_cy - config.ANCHOR_BOX[aidx][1]) / config.ANCHOR_BOX[aidx][3] 
             delta[2] = np.log(box_w / config.ANCHOR_BOX[aidx][2])
             delta[3] = np.log(box_h / config.ANCHOR_BOX[aidx][3])
 
@@ -207,9 +237,9 @@ def read_image_and_gt(img_names, data, config, base):
     label_indices, bbox_indices, box_delta_values, mask_indices, box_values, \
           = [], [], [], [], []
 
-    #iterate batch
+    # iterate batch
     for i in range(len(labels)):
-        #and annotations
+        # and annotations
         for j in range(len(labels[i])):
             if (i, aidxs[i][j]) not in aidx_set:
                 aidx_set.add((i, aidxs[i][j]))
@@ -220,7 +250,7 @@ def read_image_and_gt(img_names, data, config, base):
                 box_values.extend(bboxes[i][j])
 
 
-    #transform them into matrices
+    # transform them into matrices
     input_mask = np.reshape(
                         sparse_to_dense(
                             mask_indices,
@@ -245,7 +275,6 @@ def read_image_and_gt(img_names, data, config, base):
                     [config.BATCH_SIZE, config.ANCHORS, config.CLASSES],
                     [1.0] * len(label_indices)) 
 
-    # print(" SIZES: ", len(input_mask)," ",len(box_delta_input)," ",len(box_input)," ",len(labels))
 
     #concatenate ouputs
     Y = np.concatenate((input_mask, box_input, box_delta_input, labels), axis=-1).astype(np.float32)
@@ -286,7 +315,8 @@ def read_image_and_gt_with_original(img_files, data, config,base):
 
         #store original height and width?
         orig_h, orig_w, _ = [float(v) for v in img.shape]
-
+        
+        
         # scale image
         img = cv2.resize(img, (config.IMAGE_WIDTH, config.IMAGE_HEIGHT))
 
@@ -299,14 +329,13 @@ def read_image_and_gt_with_original(img_files, data, config,base):
         if config.init_file != 'none':
             annotations = load_yaml(data, img_name, base, config)
         else: 
-            # annotations = load_annotation(data,img_name,base)
-            annotations = data[img_name]
+            annotations = load_annotation(data,img_name)
+            # annotations = data[img_name]
         
 
         #split in classes and boxes
         labels_per_file = [a[4] for a in annotations]
         bboxes_per_file = np.array([a[0:4] for a in annotations])
-
         
         """ #TODO enable dynamic Data Augmentation
         if config.DATA_AUGMENTATION:
@@ -347,17 +376,14 @@ def read_image_and_gt_with_original(img_files, data, config,base):
         imgs[img_idx] = np.asarray(img)
         
         img_idx += 1
-
        
         # scale annotation
         x_scale = config.IMAGE_WIDTH / orig_w
-        y_scale = config.IMAGE_HEIGHT / orig_h   
+        y_scale = config.IMAGE_HEIGHT / orig_h       
 
-       
         # scale boxes
         bboxes_per_file[:, 0::2] = bboxes_per_file[:, 0::2] * x_scale
-        bboxes_per_file[:, 1::2] = bboxes_per_file[:, 1::2] * y_scale
-       
+        bboxes_per_file[:, 1::2] = bboxes_per_file[:, 1::2] * y_scale       
 
         bboxes.append(bboxes_per_file)
 
@@ -394,8 +420,7 @@ def read_image_and_gt_with_original(img_files, data, config,base):
                         aidx = dist_idx
                         break
 
-
-            #compute deltas for regression
+            #compute deltas for regression            
             box_cx, box_cy, box_w, box_h = bboxes_per_file[i]
             delta = [0] * 4
             delta[0] = (box_cx - config.ANCHOR_BOX[aidx][0]) / config.ANCHOR_BOX[aidx][2]
@@ -411,7 +436,6 @@ def read_image_and_gt_with_original(img_files, data, config,base):
         labels.append(labels_per_file)
 
 
-    #print(labels)
     #we need to transform this batch annotations into a form we can feed into the model
     label_indices, bbox_indices, box_delta_values, mask_indices, box_values, \
           = [], [], [], [], []
@@ -443,18 +467,20 @@ def read_image_and_gt_with_original(img_files, data, config,base):
 
             [config.BATCH_SIZE, config.ANCHORS, 1])
 
-    box_delta_input =  sparse_to_dense(
+    box_delta_input = sparse_to_dense(
             bbox_indices, [config.BATCH_SIZE, config.ANCHORS, 4],
             box_delta_values)
 
-    box_input =  sparse_to_dense(
+    box_input = sparse_to_dense(
             bbox_indices, [config.BATCH_SIZE, config.ANCHORS, 4],
             box_values)
+
 
     labels = sparse_to_dense(
             label_indices,
             [config.BATCH_SIZE, config.ANCHORS, config.CLASSES],
             [1.0] * len(label_indices))
+
 
     #concatenate ouputs
     Y = np.concatenate((input_mask, box_input,  box_delta_input, labels), axis=-1).astype(np.float32)
@@ -488,11 +514,8 @@ def generator_from_data_path(img_names, data, base, config, return_filenames=Fal
     """
 
     nbatches, n_skipped_per_epoch = divmod(len(img_names), config.BATCH_SIZE)
-    print("nbatches ",nbatches)
     count = 1
     epoch = 0
-
-    # data = input_file(gt_dir)
 
     while 1:
         epoch += 1
@@ -503,10 +526,9 @@ def generator_from_data_path(img_names, data, base, config, return_filenames=Fal
             try:
                 #get images and ground truths                
                 imgs, gts = read_image_and_gt(img_names_batch, data, config,base)
-                print("len ",len(gts))
                 yield (imgs, gts)
-            except:
-                print("\nError\n")
+            except IOError as err:
+                print("\nError ",err)
                 count -= 1
             i = j
             j += config.BATCH_SIZE
@@ -522,6 +544,12 @@ def visualization_generator_from_data_path(img_names, data,base, config, return_
     :param config
     :return:
     """
+
+    if shuffle:
+        #permutate images
+        shuffled = list(img_names)
+        random.shuffle(shuffled)
+        img_names = shuffled
 
     """
     Each epoch will only process an integral number of batch_size
@@ -545,8 +573,8 @@ def visualization_generator_from_data_path(img_names, data,base, config, return_
                 #get images, ground truths and original color images
                 imgs, gts, imgs_only_resized = read_image_and_gt_with_original(img_names_batch, data, config, base)
                 yield (imgs, gts, imgs_only_resized)
-            except:
-                print("\nError\n")
+            except IOError as err:
+                print("\nError ",err)
                 count -= 1
 
             i = j

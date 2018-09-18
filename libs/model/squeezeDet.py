@@ -50,7 +50,7 @@ class SqueezeDet():
                        kernel_regularizer=l2(self.config.WEIGHT_DECAY))(input_layer)
         pool1 = MaxPool2D(pool_size=(3,3), strides=(2, 2), padding='SAME', name="pool1")(conv1)
         fire2 = self._fire_layer(name="fire2", input = pool1, s1x1=16, e1x1=64, e3x3=64)
-        fire3 = self._fire_layer('fire3', fire2, s1x1=16, e1x1=64, e3x3=64)
+        fire3 = self._fire_layer('fire3', fire2, s1x1=32, e1x1=128, e3x3=128)
         pool3 = MaxPool2D(pool_size=(3, 3), strides=(2, 2), padding='SAME', name='pool3')(fire3)
         fire4 = self._fire_layer('fire4', pool3, s1x1=32, e1x1=128, e3x3=128)
         fire5 = self._fire_layer('fire5', fire4, s1x1=32, e1x1=128, e3x3=128)
@@ -62,7 +62,7 @@ class SqueezeDet():
 
         # Two extra fire modules that are not trained before
         fire10 = self._fire_layer('fire10', fire9, s1x1=96, e1x1=384, e3x3=384)
-        fire11 = self._fire_layer('fire11', fire10, s1x1=96, e1x1=384, e3x3=384)
+        fire11 = self._fire_layer('fire11', fire10, s1x1=128, e1x1=512, e3x3=512)
         dropout11 = Dropout(rate=self.config.KEEP_PROB, name='drop11')(fire11)
 
         #compute the number of output nodes from number of anchors, classes, confidence score and bounding box corners

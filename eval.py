@@ -19,6 +19,7 @@ from libs.model.evaluation import evaluate
 from libs.model.visualization import  visualize
 from libs.config.create_config import load_dict
 
+
 from keras.utils import multi_gpu_model
 import keras.backend as K
 from keras import optimizers
@@ -32,14 +33,17 @@ import json
 
 # --------------------------  Global variables can be set by optional arguments ------------------
 # Paths
-base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"
+# base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"
+base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017_small\\"
 base_test ="D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\test2017\\"
 
 # img_file = "dataset\\backup_val.txt" 
-img_file = "dataset\\img_val.txt" 
+# img_file = "dataset\\img_val.txt" 
+img_file = "dataset\\val_small.txt"
 img_file_test = "dataset\\img_test.txt"
 # gt_val_dir = 'dataset\\annotations\\instances_val2017.json'
-gt_val_dir = 'dataset\\annotations\\ann_val_clean.json'
+# gt_val_dir = 'dataset\\annotations\\ann_val_clean.json'
+gt_val_dir = 'dataset\\annotations\\val_small.json'
 gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
 
 log_dir_name = ".\\log"
@@ -50,9 +54,9 @@ CONFIG = "libs\\config\\squeeze.config"
 
 # Parameters
 TIMEOUT = 20
-EPOCHS = 1 # number of trained models 
+EPOCHS = 1  # number of trained models 
 CUDA_VISIBLE_DEVICES = "1"
-steps = None
+STEPS = 10 # None
 GPUS = 1
 STARTWITH = None
 TESTING = False
@@ -78,10 +82,10 @@ def eval():
         cfg.BATCH_SIZE = GPUS * cfg.BATCH_SIZE
 
     #if a number for steps was given
-    if steps is not None:
-        nbatches_valid = steps
+    if STEPS is not None:
+        nbatches_valid = STEPS
     else:
-        nbatches_valid = divmod(len(img_names), cfg.BATCH_SIZE)
+        nbatches_valid, mod = divmod(len(img_names), cfg.BATCH_SIZE)
 
     #set gpu to use if no multigpu
     #hide the other gpus so tensorflow only uses this one
@@ -305,8 +309,10 @@ def eval():
 
     with open(gt_val_dir,'r') as g:
         data = json.load(g)
-        g.close()
+    g.close()
     print("File read") 
+
+    print('STEPS ',nbatches_valid)
 
     # use this for saving metrics to a csv
     f = open(log_dir_name +  "\\metrics.csv", "w")
@@ -423,18 +429,18 @@ def eval():
                     best_mAP_ckpt = current_model
 
 
-                #run loss assign ops for tensorboard
+                # run loss assign ops for tensorboard
                 sess.run(prmap_assign_ops, prmap_feed_dict)
 
-                #create visualization
+                # create visualization
                 imgs = visualize(model=model, 
                                  generator=vis_generator, 
                                  config=cfg)
 
-                ##update op for images
+                # update op for images
                 sess.run(update_images, {update_placeholder:imgs})
 
-                #write everything to tensorboard
+                # write everything to tensorboard
                 writer.add_summary(merged.eval(session=sess), len(evaluated_models))
 
                 # writer.flush()

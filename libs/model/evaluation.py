@@ -250,8 +250,7 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
                         # if it has not been assigned before and if the score is bigger than the current best score
                         # if all conditions are satisfied this marked as the current biggest detection
                         
-                        # print(" AQUI ",iou > config.IOU_THRESHOLD)
-                        if(iou > 0.1): print("iou ",iou)
+                        if(iou > 0.5): print("iou ",iou)
 
                         if iou > config.IOU_THRESHOLD \
                         and batch_classes[j][iou_index] == nonzero_labels[k] \

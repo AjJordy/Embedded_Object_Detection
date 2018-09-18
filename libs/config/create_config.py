@@ -36,8 +36,8 @@ def squeezeDet_config(name):
         print("init_file")
 
     else:
-        """ Dataset COCO full """
-        cfg.CLASS_NAMES =  ['person', 'bicycle', 'car', 'motorcycle', 'airplane',
+        # Dataset COCO full 
+        """ cfg.CLASS_NAMES =  ['person', 'bicycle', 'car', 'motorcycle', 'airplane',
                             'bus', 'train', 'truck', 'boat', 'traffic_light',
                             'fire_hydrant', 'stop_sign', 'parking_meter', 'bench', 'bird',
                             'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear',
@@ -72,23 +72,30 @@ def squeezeDet_config(name):
                         '77':'cell_phone','78':'microwave','79':'oven','80':'toaster','81':'sink',
                         '82':'refrigerator','84':'book','85':'clock','86':'vase','87':'scissors',
                         '88':'teddy_bear','89':'hair_drier','90':'toothbrush'}
+        # number of categories to classify
+        # it's 91 because the max value of the IDS is 90, but we have only 80 classes
+        cfg.CLASSES = 91 # len(cfg.CLASS_NAMES) == 80
         print("COCO")
+        """        
 
         # """ Dataset COCO smaller """
-        # cfg.CLASS_NAMES = ['person', 'bicycle', 'car', 'motorcycle','sports_ball',
-        #                    'laptop','mouse','remote','cell_phone','microwave',
-        #                    'toaster','refrigerator','hair_drier']
+        cfg.CLASS_NAMES = ['person', 'bicycle', 'car', 'motorcycle','sports_ball',
+                           'laptop','mouse','remote','cell_phone','microwave',
+                           'toaster','refrigerator','hair_drier']
         # cfg.IDS = [1,2,3,4,37,73,74,75,77,78,80,82,89]
-        # cfg.CLASS_ID = {'1':'person','2':'bicycle','3': 'car','4':'motorcycle',
-        #                 '37':'sports_ball','73':'laptop','74':'mouse','75':'remote',
-        #                 '77':'cell_phone','78':'microwave','80':'toaster','82':'refrigerator',
-        #                 '89':'hair_drier'}
-
-
-        # number of categories to classify
-        # it's 90 because the max value of the IDS is 90, but we have only 80 classes
-        cfg.CLASSES = 91 # len(cfg.CLASS_NAMES) == 80    
-
+        cfg.IDS = [0,1,2,3,4,5,6,7,8,9,10,11,12]
+        cfg.CLASS_ID = {'0':'person','1':'bicycle','2': 'car','3':'motorcycle',
+                        '4':'sports_ball','5':'laptop','6':'mouse','7':'remote',
+                        '8':'cell_phone','9':'microwave','10':'toaster','11':'refrigerator',
+                        '12':'hair_drier'}
+       
+        cfg.CLASSES = 13
+        print("Small COCO")
+        """ cfg.CLASS_ID = {'1':'person','2':'bicycle','3': 'car','4':'motorcycle',
+                        '37':'sports_ball','73':'laptop','74':'mouse','75':'remote',
+                        '77':'cell_phone','78':'microwave','80':'toaster','82':'refrigerator',
+                        '89':'hair_drier'} """     
+  
     
     # classes to class index dict
     cfg.CLASS_TO_IDX = dict(zip(cfg.CLASS_NAMES, cfg.IDS))
@@ -104,14 +111,12 @@ def squeezeDet_config(name):
 
     #image properties
     cfg.IMAGE_WIDTH = 768 # 1248 / 78 = 16
-    cfg.IMAGE_HEIGHT = 624 # 384  / 24 = 16  
+    cfg.IMAGE_HEIGHT = 624 # 384 / 24 = 16  
     cfg.N_CHANNELS = 3
 
     #batch sizes
-    # cfg.BATCH_SIZE and cfg.VISUALIZATION_BATCH_SIZE must be equal
-    cfg.BATCH_SIZE = 5 # 8 
-    cfg.VISUALIZATION_BATCH_SIZE = 5 # 8
-    # cfg.STEPS = 10
+    cfg.BATCH_SIZE = 5 #8 
+    cfg.VISUALIZATION_BATCH_SIZE = 5 #8
 
     #SGD + Momentum parameters
     cfg.WEIGHT_DECAY = 0.001
@@ -128,8 +133,8 @@ def squeezeDet_config(name):
     #thesholds for evaluation
     cfg.NMS_THRESH = 0.4
     cfg.PROB_THRESH = 0.005
-    cfg.TOP_N_DETECTION = 64
-    cfg.IOU_THRESHOLD = 0.5
+    cfg.TOP_N_DETECTION = 32 #64
+    cfg.IOU_THRESHOLD = 0.6 # 0.5
     cfg.FINAL_THRESHOLD = 0.0
 
     cfg.ANCHOR_SEED = np.array([[  36.,  37.], [ 366., 174.], [ 115.,  59.],

@@ -78,24 +78,22 @@ def visualize_dt_and_gt(images, y_true, y_pred, config):
         [type] -- dict of various hyperparameters
     """
 
-
     #normalize for printing
-    #images = (images - np.min(images, axis=(1,2,3), keepdims=1)) / np.max(images, axis=(1,2,3), keepdims=1) - np.min(images, axis=(1,2,3), keepdims=1)
+    # images = (images - np.min(images, axis=(1,2,3), keepdims=1)) / np.max(images, axis=(1,2,3), keepdims=1) - np.min(images, axis=(1,2,3), keepdims=1)
 
     img_with_boxes = []
 
     #filter batch with nms
     all_filtered_boxes, all_filtered_classes, all_filtered_scores = filter_batch(y_pred, config)
 
-
     #print(len(all_filtered_scores))
     #print(len(all_filtered_scores[0]))
 
     #get gt boxes
-    box_input = y_true[:, :, 1:5]
+    box_input = y_true[:, :, 1:5] 
 
     #and gt labels
-    labels = y_true[:, :, 9:]
+    labels = y_true[:, :, 9:] 
 
     font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -103,15 +101,15 @@ def visualize_dt_and_gt(images, y_true, y_pred, config):
     for i, img in enumerate(images):
 
         #get predicted boxes
-        non_zero_boxes = box_input[i][box_input[i] > 0].reshape((-1,4))
-
+               
+        # non_zero_boxes = box_input[i][box_input[i] > 0].reshape((-1,4)) # why > 0 ?         
+        non_zero_boxes = box_input[i].reshape((-1,4))
 
         non_zero_labels = []
 
         #get the predicted labels
         for k, coords in enumerate(box_input[i,:]):
             if np.sum(coords) > 0:
-
                 for j, l in enumerate(labels[i, k]):
                     if l == 1:
                         non_zero_labels.append(j)
@@ -136,8 +134,11 @@ def visualize_dt_and_gt(images, y_true, y_pred, config):
             cv2.rectangle(img, (gt_box[0], gt_box[1]), (gt_box[2], gt_box[3]), (0, 255, 0), 1)
             # cv2.putText(img, config.CLASS_NAMES[int(non_zero_labels[j])], (gt_box[0], gt_box[1]), font, 0.5,
             #             (0, 255, 0), 1, cv2.LINE_AA)
-            cv2.putText(img, config.CLASS_ID[str(int(non_zero_labels[j]))], (gt_box[0], gt_box[1]), font, 0.5,
-                        (0, 255, 0), 1, cv2.LINE_AA)
+            try:
+                cv2.putText(img, config.CLASS_ID[str(int(non_zero_labels[j]))], (gt_box[0], gt_box[1]), font, 0.5,
+                            (0, 255, 0), 1, cv2.LINE_AA)
+            except:
+                continue
 
         #chagne to rgb
         img_with_boxes.append(img[:,:, [2,1,0]])
@@ -156,5 +157,10 @@ def bbox_transform_single_box(bbox):
     out_box[1] = int(np.floor(cy-h/2))
     out_box[2] = int(np.floor(cx+w/2))
     out_box[3] = int(np.floor(cy+h/2))
+
+    # out_box[0] = int(np.floor(cx))
+    # out_box[1] = int(np.floor(cy))
+    # out_box[2] = int(np.floor(cx+w))
+    # out_box[3] = int(np.floor(cy+h))
 
     return out_box

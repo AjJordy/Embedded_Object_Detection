@@ -14,9 +14,9 @@ img_file - a txt file with all the paths from the images of the dataset
 base - a full path to compare the name of the image with the path 
 """
 
-gt_dir = 'dataset\\annotations\\instances_train2017.json'
-img_file = 'dataset\\backup_train.txt' 
-base = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017\\'
+gt_dir = 'dataset\\annotations\\instances_val2017.json'
+img_file = 'dataset\\val_small.txt' 
+base = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017_small\\'
 
 with open(img_file) as imgs:
     img_names = imgs.read().splitlines()
@@ -55,7 +55,6 @@ for img in img_names:
         os.remove(img)
 
 
-print("cabou")
-with open('ann_val_clean.json', 'w') as outfile:
+with open('val_small.json', 'w') as outfile:
     json.dump(ann, outfile)
 outfile.close()

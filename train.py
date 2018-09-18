@@ -36,13 +36,14 @@ CONFIG = "libs\\config\\squeeze.config"
 log_dir_name = 'log'
 
 # Parameters
-EPOCHS = 10
+EPOCHS = 3
 OPTIMIZER = 'adam' # "default"
 CUDA_VISIBLE_DEVICES = "0"
 GPUS = 1
 PRINT_TIME = 0
 REDUCELRONPLATEAU = True
 VERBOSE= False
+STEPS = None
 
 
 def train():
@@ -79,13 +80,15 @@ def train():
         base = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger160\\160\\'
         gt_dir = 'imagetagger160\\export_bitbots-2018-iran-01_652.txt'
         img_file = 'imagetagger160\\images.txt'
-        print("init")        
+               
     else: 
-        img_file = '.\\dataset\\backup_train.txt'
+        # img_file = '.\\dataset\\images.txt'
+        img_file = '.\\dataset\\train_small.txt'
         # gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
-        gt_dir = '.\\dataset\\annotations\\ann_train_clean.json'
-        base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017\\"
-        print("COCO")
+        # gt_dir = '.\\dataset\\annotations\\ann_train_clean.json'
+        gt_dir = '.\\dataset\\annotations\\train_small.json'
+        base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017_small\\"
+        
 
     #open files with images and ground truths files with full path names
     with open(img_file) as imgs:
@@ -105,9 +108,10 @@ def train():
     #scale batch size to gpus
     cfg.BATCH_SIZE = cfg.BATCH_SIZE * GPUS
    
-    # if STEPS is not None:
-    nbatches_train = divmod(len(img_names), cfg.BATCH_SIZE) # cfg.STEPS
-
+    if STEPS is not None:
+        nbatches_train = STEPS
+    else:
+        nbatches_train, mod = divmod(len(img_names), cfg.BATCH_SIZE) 
 
     #tf config and session
     config = tf.ConfigProto(allow_soft_placement=True)
@@ -123,6 +127,7 @@ def train():
     # print some run info
     print("Number of epochs:  {}".format(EPOCHS))
     print("Batch size: {}".format(cfg.BATCH_SIZE))
+    print("STEPS ",nbatches_train)
 
     # set optimizer
     # multiply by number of workers do adjust for increased batch size
@@ -132,7 +137,7 @@ def train():
             opt = optimizers.Adam(lr=cfg.LR * GPUS, clipnorm=cfg.MAX_GRAD_NORM)            
             print("adam with learning rate ",cfg.LR)
         else:
-            cfg.LR= 1e-4 * GPUS
+            cfg.LR= 1e-5 * GPUS
             opt = optimizers.Adam(lr=cfg.LR * GPUS, clipnorm=cfg.MAX_GRAD_NORM)            
             print("adam with learning rate ",cfg.LR)            
     elif OPTIMIZER == "rmsprop":
@@ -271,9 +276,7 @@ def train():
 
 
 if __name__ == "__main__":
-
-    # Antes de inicializar o novo modelo, vamos desalocar o antigo
-    # Não fazer isso causa ResourceExhausted
+   
     K.clear_session()
 
     #parse arguments
