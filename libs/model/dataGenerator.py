@@ -47,6 +47,7 @@ def threadsafe_generator(f):
     return g
 
 
+"""
 def load_yaml(data, img_file, base, config):
     annotations = []       
     for img in data['imageset_bitbots-2018-iran-01']:
@@ -61,7 +62,7 @@ def load_yaml(data, img_file, base, config):
                 annotations.append([x, y, w, h, class_id])
     
     return annotations
-
+"""
 
 """ Load coco's original annotations 
 def load_annotation(data,img_file,base):     
@@ -86,6 +87,14 @@ def load_annotation(data,img_file,base):
     return annotations
 """
 
+def load_imgtagger(data,img_name):
+    annotations = []
+    for bb in data[img_name]:
+        ann = bb[:]
+        ann[4] = 0
+        annotations.append(ann)
+    return annotations
+
 def load_annotation(data,img_name):
     annotations = []
     convert = {'1':'0', # person
@@ -101,7 +110,6 @@ def load_annotation(data,img_name):
                '80':'10', # toaster
                '82':'11', # refrigerator
                '89':'12'} # hair_drier
-
     
     for bb in data[img_name]:
         ann = bb[:]          
@@ -158,10 +166,11 @@ def read_image_and_gt(img_names, data, config, base):
 
         # load annotations        
         if config.init_file != 'none':
-            annotations = load_yaml(data, img_name, base, config)
+            annotations = load_imgtagger(data,img_name)            
         else: 
-            annotations = load_annotation(data,img_name)
-            # annotations = data[img_name]
+            # annotations = load_annotation(data,img_name)
+            annotations = load_imgtagger(data,img_name)
+            
 
         #split in classes and boxes
         labels_per_file = [a[4] for a in annotations]
@@ -327,10 +336,11 @@ def read_image_and_gt_with_original(img_files, data, config,base):
       
         # load annotations
         if config.init_file != 'none':
-            annotations = load_yaml(data, img_name, base, config)
+            annotations = load_imgtagger(data,img_name)
         else: 
-            annotations = load_annotation(data,img_name)
-            # annotations = data[img_name]
+            # annotations = load_annotation(data,img_name)
+            annotations = load_imgtagger(data,img_name)
+            
         
 
         #split in classes and boxes

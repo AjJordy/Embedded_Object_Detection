@@ -32,19 +32,26 @@ import json
 
 
 # --------------------------  Global variables can be set by optional arguments ------------------
-# Paths
+
+# ----------------------- COCO ----------------------------
 # base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"
-base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017_small\\"
-base_test ="D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\test2017\\"
+# base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017_small\\"
+# base_test ="D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\test2017\\"
 
 # img_file = "dataset\\backup_val.txt" 
 # img_file = "dataset\\img_val.txt" 
-img_file = "dataset\\val_small.txt"
-img_file_test = "dataset\\img_test.txt"
+# img_file = "dataset\\val_small.txt"
+# img_file_test = "dataset\\img_test.txt"
 # gt_val_dir = 'dataset\\annotations\\instances_val2017.json'
 # gt_val_dir = 'dataset\\annotations\\ann_val_clean.json'
-gt_val_dir = 'dataset\\annotations\\val_small.json'
-gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
+# gt_val_dir = 'dataset\\annotations\\val_small.json'
+# gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
+
+#----------------- IMAGETAGGER ---------------------------
+img_file = 'imagetagger\\val_img.txt'
+gt_val_dir = 'imagetagger\\ball_ann_vall.json'
+base_val = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\'
+
 
 log_dir_name = ".\\log"
 checkpoint_dir = '.\\log\\checkpoints'
@@ -54,9 +61,9 @@ CONFIG = "libs\\config\\squeeze.config"
 
 # Parameters
 TIMEOUT = 20
-EPOCHS = 1  # number of trained models 
+EPOCHS = 8  # number of trained models 
 CUDA_VISIBLE_DEVICES = "1"
-STEPS = 10 # None
+STEPS = None
 GPUS = 1
 STARTWITH = None
 TESTING = False

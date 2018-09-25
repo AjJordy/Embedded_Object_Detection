@@ -22,7 +22,7 @@ from libs.config.create_config import load_dict
 from keras import optimizers
 import tensorflow as tf
 import keras.backend as K
-from keras.callbacks import TensorBoard, ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau
+from keras.callbacks import TensorBoard, ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau, EarlyStopping
 from keras.utils import multi_gpu_model
 import pickle
 import json
@@ -36,14 +36,14 @@ CONFIG = "libs\\config\\squeeze.config"
 log_dir_name = 'log'
 
 # Parameters
-EPOCHS = 3
+EPOCHS = 8
 OPTIMIZER = 'adam' # "default"
 CUDA_VISIBLE_DEVICES = "0"
 GPUS = 1
 PRINT_TIME = 0
 REDUCELRONPLATEAU = True
 VERBOSE= False
-STEPS = None
+STEPS = 200
 
 
 def train():
@@ -77,17 +77,25 @@ def train():
     cfg.REDUCELRONPLATEAU = REDUCELRONPLATEAU
 
     if cfg.init_file != 'none':    
-        base = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger160\\160\\'
-        gt_dir = 'imagetagger160\\export_bitbots-2018-iran-01_652.txt'
-        img_file = 'imagetagger160\\images.txt'
+        base = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\TRAIN\\'
+        gt_dir = 'imagetagger\\ball_ann.json'
+        img_file = 'imagetagger\\train_img.txt'
                
-    else: 
+    else:
+        # ---------------------- COCO ------------------------ 
         # img_file = '.\\dataset\\images.txt'
-        img_file = '.\\dataset\\train_small.txt'
         # gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
         # gt_dir = '.\\dataset\\annotations\\ann_train_clean.json'
-        gt_dir = '.\\dataset\\annotations\\train_small.json'
-        base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017_small\\"
+
+        # ------------------ Small COCO ------------------------ 
+        # img_file = '.\\dataset\\train_small.txt'
+        # gt_dir = '.\\dataset\\annotations\\train_small.json'
+        # base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017_small\\"
+
+        # ------------------ ImageTagger ------------------------ 
+        img_file = 'imagetagger\\jpg\\train_jpg.txt'
+        gt_dir = 'imagetagger\\train_jpg.json'
+        base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\jpg\\TRAIN\\"
         
 
     #open files with images and ground truths files with full path names
@@ -191,11 +199,7 @@ def train():
     if cfg.init_file != "none":
         print("Weights initialized by name from {}".format(cfg.init_file))
         load_only_possible_weights(squeeze.model, cfg.init_file, verbose=VERBOSE)
-
-        with open(gt_dir) as g:    
-            data = yaml.load(g)
-        g.close()
-        print("yaml read")
+        
         """ # since these layers already existed in the ckpt they got loaded, you can reinitialized them. TODO set flag for that
         for layer in squeeze.model.layers:
             for v in layer.__dict__:
@@ -206,16 +210,20 @@ def train():
                         initializer_method.run(session=sess)
                         #print('reinitializing layer {}.{}'.format(layer.name, v))
         """
-    else:
-        #create train generator    
-        with open(gt_dir,'r') as f:
-            data = json.load(f)
-        f.close()
-        print("File read")
     
+    #create train generator    
+    with open(gt_dir,'r') as f:
+        data = json.load(f)
+    f.close()
+    print("File read")    
 
     train_generator = generator_from_data_path(img_names, data, base, config=cfg)
 
+    # early = EarlyStopping(monitor='loss',
+    #                       min_delta=0,
+    #                       patience=0,
+    #                       verbose=0, 
+    #                       mode='auto')
 
     #make model parallel if specified
     if GPUS > 1:
@@ -244,7 +252,7 @@ def train():
         parallel_model.fit_generator(train_generator,
                                     epochs=EPOCHS,
                                     steps_per_epoch=nbatches_train,
-                                    callbacks=cb)
+                                    callbacks=[cb,early])
     else:
         # add a checkpoint saver
         ckp_saver = ModelCheckpoint(checkpoint_dir + "/model.{epoch:02d}-{loss:.2f}.hdf5",

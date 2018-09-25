@@ -11,6 +11,8 @@ import numpy as np
 import time
 import tensorflow as tf
 import keras.backend as K
+from math import sqrt
+
 
 
 def iou(box1, box2):
@@ -35,6 +37,37 @@ def iou(box1, box2):
       return intersection/union
 
   return 0
+
+  # xA = (box1[0] - 0.5*box1[2]) / 768 
+  # xB = (box2[0] - 0.5*box2[2]) / 768 
+  # yA = (box1[1] + 0.5*box1[3]) / 624
+  # yB = (box2[1] + 0.5*box2[3]) / 624
+  # p1 = sqrt((xA-xB)**2) + ((yA-yB)**2) # left up
+
+  # xA = (box1[0] - 0.5*box1[2]) / 768
+  # xB = (box2[0] - 0.5*box2[2]) / 768
+  # yA = (box1[1] - 0.5*box1[3]) / 624
+  # yB = (box2[1] - 0.5*box2[3]) / 624
+  # p2 = sqrt((xA-xB)**2) + ((yA-yB)**2) # left down
+
+  # xA = (box1[0] + 0.5*box1[2]) / 768
+  # xB = (box2[0] + 0.5*box2[2]) / 768
+  # yA = (box1[1] + 0.5*box1[3]) / 624
+  # yB = (box2[1] + 0.5*box2[3]) / 624
+  # p3 = sqrt((xA-xB)**2) + ((yA-yB)**2) # right up
+
+  # xA = (box1[0] + 0.5*box1[2]) / 768
+  # xB = (box2[0] + 0.5*box2[2]) / 768
+  # yA = (box1[1] - 0.5*box1[3]) / 624
+  # yB = (box2[1] - 0.5*box2[3]) / 624
+  # p4 = sqrt((xA-xB)**2) + ((yA-yB)**2) # right down
+
+  # print("p1 {} p2 {} p3 {} p4 {}".format(p1,p2,p3,p4))
+  # result = p1+p2+p3+p4
+  # print("result ",result)
+
+  # return 1 - result 
+
 
 
 
@@ -61,6 +94,36 @@ def batch_iou(boxes, box):
   inter = lr*tb
   union = boxes[:,2]*boxes[:,3] + box[2]*box[3] - inter
   return inter/union
+
+  # xA = (box[0] - 0.5*box[2]) / 768 
+  # xB = (boxes[:,0] - 0.5*boxes[:,2]) / 768 
+  # yA = (box[1] + 0.5*box[3]) / 624
+  # yB = (boxes[:,1] + 0.5*boxes[:,3]) / 624
+  # p1 = np.sqrt(((xA-xB[:])**2) + ((yA-yB[:])**2)) # left up
+
+  # xA = (box[0] - 0.5*box[2]) / 768
+  # xB = (boxes[:,0] - 0.5*boxes[:,2]) / 768
+  # yA = (box[1] - 0.5*box[3]) / 624
+  # yB = (boxes[:,1] - 0.5*boxes[:,3]) / 624
+  # p2 = np.sqrt(((xA-xB[:])**2) + ((yA-yB[:])**2)) # left down
+
+  # xA = (box[0] + 0.5*box[2]) / 768
+  # xB = (boxes[:,0] + 0.5*boxes[:,2]) / 768
+  # yA = (box[1] + 0.5*box[3]) / 624
+  # yB = (boxes[:,1] + 0.5*boxes[:,3]) / 624
+  # p3 = np.sqrt(((xA-xB[:])**2) + ((yA-yB[:])**2)) # right up
+
+  # xA = (box[0] + 0.5*box[2]) / 768
+  # xB = (boxes[:,0] + 0.5*boxes[:,2]) / 768
+  # yA = (box[1] - 0.5*box[3]) / 624
+  # yB = (boxes[:,1] - 0.5*boxes[:,3]) / 624
+  # p4 = np.sqrt(((xA-xB[:])**2) + ((yA-yB[:])**2)) # right down
+
+  # result = p1+p2+p3+p4
+
+  # return 1 - result 
+
+
 
 def nms(boxes, probs, threshold):
   """Non-Maximum supression.

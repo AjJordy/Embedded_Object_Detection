@@ -25,19 +25,24 @@ def squeezeDet_config(name):
     cfg = edict()
 
     cfg.init_file = 'none'
-    # cfg.init_file = 'log\\model.10-32.74.hdf5' 
+    # cfg.init_file = 'log\\model.01-13.96.hdf5' 
 
     if cfg.init_file != 'none':       
         """Dataset imagetagger """
-        cfg.CLASS_BITBOT =  {'goalpost':0,'ball':1,'goal':2,'robot':3,'obstacle':4,'line':5}
-        cfg.CLASS_NAMES = ['goalpost','ball','goal','robot','obstacle','line']
-        cfg.IDS = [0,1,2,3,4,5]
-        cfg.CLASSES = 6 
+        # cfg.CLASS_BITBOT =  {'goalpost':0,'ball':1,'goal':2,'robot':3,'obstacle':4,'line':5}
+        # cfg.CLASS_NAMES = ['goalpost','ball','goal','robot','obstacle','line']
+        # cfg.IDS = [0,1,2,3,4,5]
+        # cfg.CLASSES = 6 
+        cfg.CLASS_BITBOT =  {'ball':0}
+        cfg.CLASS_NAMES = ['ball']
+        cfg.IDS = [0]
+        cfg.CLASSES = 1
         print("init_file")
 
     else:
         # Dataset COCO full 
-        """ cfg.CLASS_NAMES =  ['person', 'bicycle', 'car', 'motorcycle', 'airplane',
+        """ 
+        cfg.CLASS_NAMES =  ['person', 'bicycle', 'car', 'motorcycle', 'airplane',
                             'bus', 'train', 'truck', 'boat', 'traffic_light',
                             'fire_hydrant', 'stop_sign', 'parking_meter', 'bench', 'bird',
                             'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear',
@@ -78,23 +83,30 @@ def squeezeDet_config(name):
         print("COCO")
         """        
 
-        # """ Dataset COCO smaller """
+        """
+        # Dataset COCO smaller 
         cfg.CLASS_NAMES = ['person', 'bicycle', 'car', 'motorcycle','sports_ball',
                            'laptop','mouse','remote','cell_phone','microwave',
                            'toaster','refrigerator','hair_drier']
-        # cfg.IDS = [1,2,3,4,37,73,74,75,77,78,80,82,89]
+        # # cfg.IDS = [1,2,3,4,37,73,74,75,77,78,80,82,89]
         cfg.IDS = [0,1,2,3,4,5,6,7,8,9,10,11,12]
         cfg.CLASS_ID = {'0':'person','1':'bicycle','2': 'car','3':'motorcycle',
                         '4':'sports_ball','5':'laptop','6':'mouse','7':'remote',
                         '8':'cell_phone','9':'microwave','10':'toaster','11':'refrigerator',
-                        '12':'hair_drier'}
-       
+                        '12':'hair_drier'}       
         cfg.CLASSES = 13
         print("Small COCO")
-        """ cfg.CLASS_ID = {'1':'person','2':'bicycle','3': 'car','4':'motorcycle',
+        cfg.CLASS_ID = {'1':'person','2':'bicycle','3': 'car','4':'motorcycle',
                         '37':'sports_ball','73':'laptop','74':'mouse','75':'remote',
                         '77':'cell_phone','78':'microwave','80':'toaster','82':'refrigerator',
-                        '89':'hair_drier'} """     
+                        '89':'hair_drier'} 
+        """
+
+        cfg.CLASS_BITBOT =  {'ball':0}
+        cfg.CLASS_NAMES = ['ball']
+        cfg.IDS = [0]
+        cfg.CLASSES = 1
+        print("Only ball")
   
     
     # classes to class index dict
@@ -115,8 +127,8 @@ def squeezeDet_config(name):
     cfg.N_CHANNELS = 3
 
     #batch sizes
-    cfg.BATCH_SIZE = 5 #8 
-    cfg.VISUALIZATION_BATCH_SIZE = 5 #8
+    cfg.BATCH_SIZE = 10 
+    cfg.VISUALIZATION_BATCH_SIZE = 10
 
     #SGD + Momentum parameters
     cfg.WEIGHT_DECAY = 0.001
@@ -134,7 +146,7 @@ def squeezeDet_config(name):
     cfg.NMS_THRESH = 0.4
     cfg.PROB_THRESH = 0.005
     cfg.TOP_N_DETECTION = 32 #64
-    cfg.IOU_THRESHOLD = 0.6 # 0.5
+    cfg.IOU_THRESHOLD = 0.5
     cfg.FINAL_THRESHOLD = 0.0
 
     cfg.ANCHOR_SEED = np.array([[  36.,  37.], [ 366., 174.], [ 115.,  59.],
