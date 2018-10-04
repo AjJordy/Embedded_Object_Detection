@@ -332,7 +332,6 @@ def boxes_from_deltas(pred_box_delta, config):
     anchor_h = config.ANCHOR_BOX[:, 3]
 
     # as we only predict the deltas, we need to transform the anchor box values before computing the loss
-
     box_center_x = K.identity(
         anchor_x + delta_x * anchor_w)
     box_center_y = K.identity(
@@ -343,11 +342,9 @@ def boxes_from_deltas(pred_box_delta, config):
         anchor_h * safe_exp(delta_h, config.EXP_THRESH))
 
     # tranform into a real box with four coordinates
-
     xmins, ymins, xmaxs, ymaxs = bbox_transform([box_center_x, box_center_y, box_width, box_height])
 
     # trim boxes if predicted outside
-
     xmins = K.minimum(
         K.maximum(0.0, xmins), config.IMAGE_WIDTH - 1.0)
     ymins = K.minimum(

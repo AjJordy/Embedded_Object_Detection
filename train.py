@@ -12,7 +12,6 @@
 # Email: jordyfaria0@gmail.com
 # Github: AjJordy
 
-
 from libs.model.squeezeDet import  SqueezeDet
 from libs.model.dataGenerator import generator_from_data_path, read_image_and_gt
 from libs.model.modelLoading import load_only_possible_weights
@@ -36,14 +35,14 @@ CONFIG = "libs\\config\\squeeze.config"
 log_dir_name = 'log'
 
 # Parameters
-EPOCHS = 8
+EPOCHS = 15
 OPTIMIZER = 'adam' # "default"
 CUDA_VISIBLE_DEVICES = "0"
 GPUS = 1
 PRINT_TIME = 0
 REDUCELRONPLATEAU = True
 VERBOSE= False
-STEPS = 200
+STEPS = None #200
 
 
 def train():
@@ -77,22 +76,22 @@ def train():
     cfg.REDUCELRONPLATEAU = REDUCELRONPLATEAU
 
     if cfg.init_file != 'none':    
-        base = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\TRAIN\\'
-        gt_dir = 'imagetagger\\ball_ann.json'
-        img_file = 'imagetagger\\train_img.txt'
-               
+        img_file = 'imagetagger\\jpg\\train_jpg.txt'
+        gt_dir = 'imagetagger\\train_jpg.json'
+        base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\jpg\\TRAIN\\"
+                       
     else:
         # ---------------------- COCO ------------------------ 
-        # img_file = '.\\dataset\\images.txt'
-        # gt_dir = '.\\dataset\\annotations\\instances_train2017.json'
-        # gt_dir = '.\\dataset\\annotations\\ann_train_clean.json'
+        # img_file = 'dataset\\images.txt'       
+        # gt_dir = 'dataset\\annotations\\ann_train_clean.json'
+        # base = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017\\'
 
         # ------------------ Small COCO ------------------------ 
-        # img_file = '.\\dataset\\train_small.txt'
-        # gt_dir = '.\\dataset\\annotations\\train_small.json'
+        # img_file = 'dataset\\train_small.txt'
+        # gt_dir = 'dataset\\annotations\\train_small.json'
         # base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017_small\\"
 
-        # ------------------ ImageTagger ------------------------ 
+        # ------------------ ImageTagger ----------------------- 
         img_file = 'imagetagger\\jpg\\train_jpg.txt'
         gt_dir = 'imagetagger\\train_jpg.json'
         base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\jpg\\TRAIN\\"
@@ -119,7 +118,7 @@ def train():
     if STEPS is not None:
         nbatches_train = STEPS
     else:
-        nbatches_train, mod = divmod(len(img_names), cfg.BATCH_SIZE) 
+        nbatches_train, _ = divmod(len(img_names), cfg.BATCH_SIZE) 
 
     #tf config and session
     config = tf.ConfigProto(allow_soft_placement=True)
@@ -141,13 +140,13 @@ def train():
     # multiply by number of workers do adjust for increased batch size
     if OPTIMIZER == "adam":
         if cfg.init_file != 'none':
-            cfg.LR= 1e-6 * GPUS
+            cfg.LR= 1e-8 * GPUS
             opt = optimizers.Adam(lr=cfg.LR * GPUS, clipnorm=cfg.MAX_GRAD_NORM)            
             print("adam with learning rate ",cfg.LR)
         else:
-            cfg.LR= 1e-5 * GPUS
+            cfg.LR= 1e-6 * GPUS
             opt = optimizers.Adam(lr=cfg.LR * GPUS, clipnorm=cfg.MAX_GRAD_NORM)            
-            print("adam with learning rate ",cfg.LR)            
+            print("Adam with learning rate ",cfg.LR)            
     elif OPTIMIZER == "rmsprop":
         opt = optimizers.RMSprop(lr=0.001 * GPUS, clipnorm=cfg.MAX_GRAD_NORM)
         cfg.LR= 0.001 * GPUS
@@ -157,14 +156,13 @@ def train():
     # use default if nothing was given
     else:
         # create sgd with momentum and gradient clipping
-        opt= optimizers.SGD(lr=cfg.LEARNING_RATE * GPUS,
+        cfg.LR = 1e-4  * GPUS
+        opt= optimizers.SGD(lr=cfg.LR,
                             decay=0,
                             momentum=cfg.MOMENTUM,
                             nesterov=False,
-                            clipnorm=cfg.MAX_GRAD_NORM)
-
-        cfg.LR = cfg.LEARNING_RATE  * GPUS
-        print("Learning rate: {}".format(cfg.LEARNING_RATE * GPUS))
+                            clipnorm=cfg.MAX_GRAD_NORM)        
+        print("SGD with learning rate: {}".format(cfg.LR))
 
         #add manuall learning rate decay
         #lrCallback = LearningRateScheduler(schedule)
@@ -199,8 +197,8 @@ def train():
     if cfg.init_file != "none":
         print("Weights initialized by name from {}".format(cfg.init_file))
         load_only_possible_weights(squeeze.model, cfg.init_file, verbose=VERBOSE)
-        
-        """ # since these layers already existed in the ckpt they got loaded, you can reinitialized them. TODO set flag for that
+                
+        # since these layers already existed in the ckpt they got loaded, you can reinitialized them. TODO set flag for that
         for layer in squeeze.model.layers:
             for v in layer.__dict__:
                 v_arg = getattr(layer, v)
@@ -208,8 +206,8 @@ def train():
                     if hasattr(v_arg, 'initializer'):
                         initializer_method = getattr(v_arg, 'initializer')
                         initializer_method.run(session=sess)
-                        #print('reinitializing layer {}.{}'.format(layer.name, v))
-        """
+                        print('reinitializing layer {}.{}'.format(layer.name, v))
+        
     
     #create train generator    
     with open(gt_dir,'r') as f:
@@ -252,7 +250,7 @@ def train():
         parallel_model.fit_generator(train_generator,
                                     epochs=EPOCHS,
                                     steps_per_epoch=nbatches_train,
-                                    callbacks=[cb,early])
+                                    callbacks=cb)
     else:
         # add a checkpoint saver
         ckp_saver = ModelCheckpoint(checkpoint_dir + "/model.{epoch:02d}-{loss:.2f}.hdf5",

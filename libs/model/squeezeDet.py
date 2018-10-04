@@ -61,9 +61,9 @@ class SqueezeDet():
         fire9 = self._fire_layer('fire9', fire8, s1x1=64, e1x1=256, e3x3=256)
 
         # Two extra fire modules that are not trained before
-        # fire10 = self._fire_layer('fire10', fire9, s1x1=96, e1x1=384, e3x3=384)
-        # fire11 = self._fire_layer('fire11', fire10, s1x1=128, e1x1=384, e3x3=384)
-        dropout11 = Dropout(rate=self.config.KEEP_PROB, name='drop11')(fire9)
+        fire10 = self._fire_layer('fire10', fire9, s1x1=96, e1x1=384, e3x3=384)
+        fire11 = self._fire_layer('fire11', fire10, s1x1=128, e1x1=384, e3x3=384)
+        dropout11 = Dropout(rate=self.config.KEEP_PROB, name='drop11')(fire11)
 
         #compute the number of output nodes from number of anchors, classes, confidence score and bounding box corners
         num_output = self.config.ANCHOR_PER_GRID * (self.config.CLASSES + 1 + 4)
@@ -226,12 +226,10 @@ class SqueezeDet():
         input_mask = K.expand_dims(input_mask, axis=-1)
         box_delta_input = y_true[:, :, 5:9]
 
-        #number of objects. Used to normalize bbox and classification loss
+        # number of objects. Used to normalize bbox and classification loss
         num_objects = K.sum(input_mask)
 
-
         #before computing the losses we need to slice the network outputs
-
         #number of class probabilities, n classes for each anchor
         num_class_probs = mc.ANCHOR_PER_GRID * mc.CLASSES
 
@@ -239,18 +237,18 @@ class SqueezeDet():
         num_confidence_scores = mc.ANCHOR_PER_GRID+num_class_probs
 
         #slice the confidence scores and put them trough a sigmoid for probabilities
-        pred_conf = K.sigmoid(
-            K.reshape(
-                  y_pred[:, :, :, num_class_probs:num_confidence_scores],
-                  [mc.BATCH_SIZE, mc.ANCHORS]
-              )
-          )
+        # pred_conf = K.sigmoid(
+        #     K.reshape(
+        #           y_pred[:, :, :, num_class_probs:num_confidence_scores],
+        #           [mc.BATCH_SIZE, mc.ANCHORS]
+        #       )
+        #   )
 
         #slice remaining bounding box_deltas
         pred_box_delta = K.reshape(
               y_pred[:, :, :, num_confidence_scores:],
               [mc.BATCH_SIZE, mc.ANCHORS, 4]
-          )
+        )
 
         # cross-entropy: q * -log(p) + (1-q) * -log(1-p)
         # add a small value into log to prevent blowing up

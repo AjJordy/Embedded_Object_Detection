@@ -123,6 +123,7 @@ def visualize_dt_and_gt(images, y_true, y_pred, config):
             #add rectangle and text
             cv2.rectangle(img, (det_box[0], det_box[1]), (det_box[2], det_box[3]), (0,0,255), 1)
             cv2.putText(img, config.CLASS_NAMES[all_filtered_classes[i][j]] + " " + str(all_filtered_scores[i][j]) , (det_box[0], det_box[1]), font, 0.5, (0,0,255), 1, cv2.LINE_AA)
+            
 
         #iterate gt boxes
         for j, gt_box in enumerate(non_zero_boxes):
@@ -134,8 +135,8 @@ def visualize_dt_and_gt(images, y_true, y_pred, config):
             cv2.rectangle(img, (gt_box[0], gt_box[1]), (gt_box[2], gt_box[3]), (0, 255, 0), 1)
             # cv2.putText(img, config.CLASS_NAMES[int(non_zero_labels[j])], (gt_box[0], gt_box[1]), font, 0.5,
             #             (0, 255, 0), 1, cv2.LINE_AA)
-            try:
-                cv2.putText(img, config.CLASS_ID[str(int(non_zero_labels[j]))], (gt_box[0], gt_box[1]), font, 0.5,
+            try:                            
+                cv2.putText(img, config.CLASS_ID[0], (gt_box[0], gt_box[1]), font, 0.5,
                             (0, 255, 0), 1, cv2.LINE_AA)
             except:
                 continue

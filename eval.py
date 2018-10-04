@@ -36,34 +36,38 @@ import json
 # ----------------------- COCO ----------------------------
 # base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"
 # base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017_small\\"
-# base_test ="D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\test2017\\"
+base_test ="D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\test2017\\"
 
 # img_file = "dataset\\backup_val.txt" 
 # img_file = "dataset\\img_val.txt" 
 # img_file = "dataset\\val_small.txt"
-# img_file_test = "dataset\\img_test.txt"
+img_file_test = "dataset\\img_test.txt"
 # gt_val_dir = 'dataset\\annotations\\instances_val2017.json'
 # gt_val_dir = 'dataset\\annotations\\ann_val_clean.json'
 # gt_val_dir = 'dataset\\annotations\\val_small.json'
-# gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
+gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
 
 #----------------- IMAGETAGGER ---------------------------
-img_file = 'imagetagger\\val_img.txt'
-gt_val_dir = 'imagetagger\\ball_ann_vall.json'
-base_val = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\'
+# img_file = 'imagetagger\\val_img.txt'
+# gt_val_dir = 'imagetagger\\ball_ann_vall.json'
+# base_val = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\'
+
+img_file = 'imagetagger\\jpg\\train_jpg.txt'
+gt_val_dir = 'imagetagger\\train_jpg.json'
+base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\jpg\\TRAIN\\"
 
 
-log_dir_name = ".\\log"
-checkpoint_dir = '.\\log\\checkpoints'
-tensorboard_dir = '.\\log\\tensorboard_val'
-tensorboard_dir_test = '.\\log\\tensorboard_test'
+log_dir_name = "log"
+checkpoint_dir = 'log\\checkpoints'
+tensorboard_dir = 'log\\tensorboard_val'
+tensorboard_dir_test = 'log\\tensorboard_test'
 CONFIG = "libs\\config\\squeeze.config"
 
 # Parameters
 TIMEOUT = 20
-EPOCHS = 8  # number of trained models 
+EPOCHS = 15 # number of trained models 
 CUDA_VISIBLE_DEVICES = "1"
-STEPS = None
+STEPS = 10 #None
 GPUS = 1
 STARTWITH = None
 TESTING = False
@@ -76,36 +80,36 @@ def eval():
     Also creates visualization and writes everything to tensorboard.
     """
 
-    #create config object
+    # create config object
     cfg = load_dict(CONFIG)
 
-    #open files with images and ground truths files with full path names
+    # open files with images and ground truths files with full path names
     with open(img_file) as imgs:
         img_names = imgs.read().splitlines()
     imgs.close()
 
-    #if multigpu support, adjust batch size
+    # if multigpu support, adjust batch size
     if GPUS > 1:
         cfg.BATCH_SIZE = GPUS * cfg.BATCH_SIZE
 
-    #if a number for steps was given
+    # if a number for steps was given
     if STEPS is not None:
         nbatches_valid = STEPS
     else:
         nbatches_valid, mod = divmod(len(img_names), cfg.BATCH_SIZE)
 
-    #set gpu to use if no multigpu
-    #hide the other gpus so tensorflow only uses this one
+    # set gpu to use if no multigpu
+    # hide the other gpus so tensorflow only uses this one
     os.environ['CUDA_VISIBLE_DEVICES'] = CUDA_VISIBLE_DEVICES
 
 
-    #tf config and session
+    # tf config and session
     config = tf.ConfigProto(allow_soft_placement=True)
     sess = tf.Session(config=config)
     K.set_session(sess)
 
 
-    #Variables to visualize losses (as metrics) for tensorboard
+    # Variables to visualize losses (as metrics) for tensorboard
     loss_var = tf.Variable(initial_value=0, 
                            trainable=False,
                            name='val_loss', 

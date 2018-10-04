@@ -95,7 +95,7 @@ def load_imgtagger(data,img_name):
         annotations.append(ann)
     return annotations
 
-def load_annotation(data,img_name):
+def load_small_annotation(data,img_name):
     annotations = []
     convert = {'1':'0', # person
                '2':'1', # bicycle
@@ -167,8 +167,8 @@ def read_image_and_gt(img_names, data, config, base):
         # load annotations        
         if config.init_file != 'none':
             annotations = load_imgtagger(data,img_name)            
-        else: 
-            # annotations = load_annotation(data,img_name)
+        else:          
+            # annotations = data[img_name]                       
             annotations = load_imgtagger(data,img_name)
             
 
@@ -278,7 +278,6 @@ def read_image_and_gt(img_names, data, config, base):
                         [config.BATCH_SIZE, config.ANCHORS, 4],
                         box_values)
 
-    
     labels = sparse_to_dense(
                     label_indices,
                     [config.BATCH_SIZE, config.ANCHORS, config.CLASSES],
@@ -338,7 +337,7 @@ def read_image_and_gt_with_original(img_files, data, config,base):
         if config.init_file != 'none':
             annotations = load_imgtagger(data,img_name)
         else: 
-            # annotations = load_annotation(data,img_name)
+            # annotations = data[img_name]
             annotations = load_imgtagger(data,img_name)
             
         

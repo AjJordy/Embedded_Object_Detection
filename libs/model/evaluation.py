@@ -90,7 +90,7 @@ def filter_batch(y_pred,config):
 
     all_filtered_boxes = []
     all_filtered_scores = []
-    all_filtered_classes = [ ]
+    all_filtered_classes = []
 
     #iterate batch
     for j in range(config.BATCH_SIZE):
@@ -138,7 +138,7 @@ def compute_statistics(all_boxes, all_classes, all_scores, all_gts, config):
     rec = recall(tp=np.sum(all_tps, axis=0), fn=np.sum(all_fns,axis=0))
 
     #compute f1 score
-    f1 = 2 * prec * rec / (prec+rec+1e-20)
+    f1 = 2 * prec * rec / (prec + rec + 1e-20)
 
     #compute mean average precisions
     APs, precs, iprecs = AP(is_gt, all_scores)
@@ -234,7 +234,6 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
 
             # for every gt per image compute overlaps with detections
             for k in range(len(nonzero_gts)):
-
                 try:
                     #get overlap between gt box and all predictions
                     ious = utils.batch_iou(np.stack(all_boxes[i][j]), nonzero_gts[k])
@@ -250,7 +249,7 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
                         # if it has not been assigned before and if the score is bigger than the current best score
                         # if all conditions are satisfied this marked as the current biggest detection
                         
-                        if(iou > 0.5): print("iou ",iou)
+                        if(iou > 0.3): print("iou ",iou)
 
                         if iou > config.IOU_THRESHOLD \
                         and batch_classes[j][iou_index] == nonzero_labels[k] \
@@ -281,7 +280,6 @@ def compute_statistics_for_thresholding(all_boxes, all_classes, all_scores, all_
                         all_score_thresholds[nonzero_labels[k]].append(current_score)
                     # print("try")
                 except:
-
                     fn_per_image[nonzero_labels[k]] = len(nonzero_gts[k])
                     # print("except")
 
@@ -326,7 +324,7 @@ def AP(predictions, scores):
     #average precision
     ap = np.zeros((len(predictions), 2))
 
-    count = 0
+    # count = 0
 
     for i in range(len(predictions)):
         # print("predictions ",len(predictions[i]))
@@ -420,7 +418,6 @@ def filter_prediction(boxes, probs, cls_idx, config):
       cls_idx = cls_idx[order]
 
     else:
-
       filtered_idx = np.nonzero(probs>config.PROB_THRESH)[0]
       probs = probs[filtered_idx]
       boxes = boxes[filtered_idx]
