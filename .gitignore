@@ -1,3 +1,7 @@
 dataset/
-imagetagger/
+imagetagger/imagens
+imagetagger/jpg
+imagetagger/tags
+imagetagger/TRAIN
+imagetagger/VAL
 log/

@@ -98,7 +98,7 @@ def train():
         # base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017_small\\"
 
         # ------------------ ImageTagger ----------------------- 
-        img_file = 'imagetagger\\jpg\\train_jpg.txt'
+        img_file = 'imagetagger\\train_jpg.txt'
         gt_dir = 'imagetagger\\train_jpg.json'
         base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\jpg\\TRAIN\\"
         
