@@ -35,7 +35,7 @@ CONFIG = "libs\\config\\squeeze.config"
 log_dir_name = 'log'
 
 # Parameters
-EPOCHS = 15
+EPOCHS = 10
 OPTIMIZER = 'adam' # "default"
 CUDA_VISIBLE_DEVICES = "0"
 GPUS = 1
@@ -75,10 +75,16 @@ def train():
     cfg.GPUS = GPUS
     cfg.REDUCELRONPLATEAU = REDUCELRONPLATEAU
 
-    if cfg.init_file != 'none':    
-        img_file = 'imagetagger\\jpg\\train_jpg.txt'
-        gt_dir = 'imagetagger\\train_jpg.json'
-        base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\jpg\\TRAIN\\"
+    if cfg.init_file != 'none':
+        # ------------------ ImageTagger -----------------------     
+        # img_file = 'imagetagger\\jpg\\train_jpg.txt'
+        # gt_dir = 'imagetagger\\train_jpg.json'
+        # base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\jpg\\TRAIN\\"
+
+        # ------------------ Small COCO ------------------------ 
+        img_file = 'dataset\\train_small.txt'
+        gt_dir = 'dataset\\annotations\\train_small.json'
+        base = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\train2017_small\\"
                        
     else:
         # ---------------------- COCO ------------------------ 
@@ -140,11 +146,11 @@ def train():
     # multiply by number of workers do adjust for increased batch size
     if OPTIMIZER == "adam":
         if cfg.init_file != 'none':
-            cfg.LR= 1e-8 * GPUS
-            opt = optimizers.Adam(lr=cfg.LR * GPUS, clipnorm=cfg.MAX_GRAD_NORM)            
-            print("adam with learning rate ",cfg.LR)
-        else:
             cfg.LR= 1e-6 * GPUS
+            opt = optimizers.Adam(lr=cfg.LR * GPUS, clipnorm=cfg.MAX_GRAD_NORM)            
+            print("Adam with learning rate ",cfg.LR)
+        else:
+            cfg.LR= 1e-5 * GPUS
             opt = optimizers.Adam(lr=cfg.LR * GPUS, clipnorm=cfg.MAX_GRAD_NORM)            
             print("Adam with learning rate ",cfg.LR)            
     elif OPTIMIZER == "rmsprop":
@@ -169,7 +175,7 @@ def train():
         #cb.append(lrCallback)
 
     # save config file to log dir
-    with open( log_dir_name  +'/config.pkl', 'wb') as f:
+    with open(log_dir_name  +'/config.pkl', 'wb') as f:
         pickle.dump(cfg, f, pickle.HIGHEST_PROTOCOL)
 
     # add tensorboard callback
@@ -217,12 +223,6 @@ def train():
 
     train_generator = generator_from_data_path(img_names, data, base, config=cfg)
 
-    # early = EarlyStopping(monitor='loss',
-    #                       min_delta=0,
-    #                       patience=0,
-    #                       verbose=0, 
-    #                       mode='auto')
-
     #make model parallel if specified
     if GPUS > 1:
         #use multigpu model checkpoint
@@ -266,10 +266,10 @@ def train():
         #compile model from squeeze object, loss is not a function of model directly
         squeeze.model.compile(optimizer=opt,
                               loss=[squeeze.loss],
-                              metrics = [squeeze.loss_without_regularization,
-                                        squeeze.bbox_loss,
-                                        squeeze.class_loss,
-                                        squeeze.conf_loss])
+                              metrics=[squeeze.loss_without_regularization,
+                                       squeeze.bbox_loss,
+                                       squeeze.class_loss,
+                                       squeeze.conf_loss])
 
         #actually do the training
         squeeze.model.fit_generator(train_generator,

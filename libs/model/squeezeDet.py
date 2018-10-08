@@ -220,7 +220,6 @@ class SqueezeDet():
                                     mc.N_ANCHORS_HEIGHT,
                                     mc.N_ANCHORS_WIDTH, -1))
 
-
         #slice y_true
         input_mask = y_true[:, :, 0]
         input_mask = K.expand_dims(input_mask, axis=-1)
@@ -234,7 +233,7 @@ class SqueezeDet():
         num_class_probs = mc.ANCHOR_PER_GRID * mc.CLASSES
 
         #number of confidence scores, one for each anchor + class probs
-        num_confidence_scores = mc.ANCHOR_PER_GRID+num_class_probs
+        num_confidence_scores = mc.ANCHOR_PER_GRID + num_class_probs
 
         #slice the confidence scores and put them trough a sigmoid for probabilities
         # pred_conf = K.sigmoid(
@@ -246,8 +245,8 @@ class SqueezeDet():
 
         #slice remaining bounding box_deltas
         pred_box_delta = K.reshape(
-              y_pred[:, :, :, num_confidence_scores:],
-              [mc.BATCH_SIZE, mc.ANCHORS, 4]
+            y_pred[:, :, :, num_confidence_scores:],
+            [mc.BATCH_SIZE, mc.ANCHORS, 4]
         )
 
         # cross-entropy: q * -log(p) + (1-q) * -log(1-p)

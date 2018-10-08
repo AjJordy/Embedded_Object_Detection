@@ -35,19 +35,23 @@ import json
 
 # ----------------------- COCO ----------------------------
 # base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017\\"
-# base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017_small\\"
-base_test ="D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\test2017\\"
-
 # img_file = "dataset\\backup_val.txt" 
 # img_file = "dataset\\img_val.txt" 
-# img_file = "dataset\\val_small.txt"
-img_file_test = "dataset\\img_test.txt"
 # gt_val_dir = 'dataset\\annotations\\instances_val2017.json'
 # gt_val_dir = 'dataset\\annotations\\ann_val_clean.json'
-# gt_val_dir = 'dataset\\annotations\\val_small.json'
-gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
 
-#----------------- IMAGETAGGER ---------------------------
+# img_file_test = "dataset\\img_test.txt"
+# gt_test_dir = "dataset\\annotations\\image_info_test2017.json"
+# base_test ="D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\test2017\\"
+
+
+# ----------------- COCO Small  ---------------------------
+# img_file = "dataset\\val_small.txt"
+# gt_val_dir = 'dataset\\annotations\\val_small.json'
+# base_val = "D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\dataset\\val2017_small\\"
+
+
+# ----------------- IMAGETAGGER ---------------------------
 # img_file = 'imagetagger\\val_img.txt'
 # gt_val_dir = 'imagetagger\\ball_ann_vall.json'
 # base_val = 'D:\\Humanoid\\squeezeDet\\Embedded_Object_Detection\\imagetagger\\'
@@ -65,7 +69,7 @@ CONFIG = "libs\\config\\squeeze.config"
 
 # Parameters
 TIMEOUT = 20
-EPOCHS = 15 # number of trained models 
+EPOCHS = 10 # number of trained models 
 CUDA_VISIBLE_DEVICES = "1"
 STEPS = 10 #None
 GPUS = 1
@@ -192,7 +196,6 @@ def eval():
     for i, name in enumerate(cfg.CLASS_NAMES):
 
         # print("Creating tensorboard plots for " + name)
-
         precisions.append(tf.Variable(initial_value=0, 
                                       trainable=False,
                                       name="precision/" + name, 
@@ -321,8 +324,7 @@ def eval():
     with open(gt_val_dir,'r') as g:
         data = json.load(g)
     g.close()
-    print("File read") 
-
+    print("File read")
     print('STEPS ',nbatches_valid)
 
     # use this for saving metrics to a csv
@@ -380,6 +382,7 @@ def eval():
                 # we have to reset them each time to have the same data, otherwise we'd have to use batch size one.
                 val_generator_1 = generator_from_data_path(img_names, data, base_val, config=cfg)
                 val_generator_2 = generator_from_data_path(img_names, data, base_val, config=cfg)
+
                 # create a generator for the visualization of bounding boxes
                 vis_generator = visualization_generator_from_data_path(img_names, data, base_val, config=cfg)
 
@@ -698,8 +701,6 @@ def eval():
             i+=1
 
 
-
-
 if __name__ == "__main__":
 
     #argument parsing
@@ -725,27 +726,16 @@ if __name__ == "__main__":
         log_dir_name = args.logdir
         checkpoint_dir = log_dir_name + '/checkpoints'
         tensorboard_dir = log_dir_name + '/tensorboard_val'
-
     if args.val_img is not None:
         img_file = args.val_img
-    # if args.val_gt is not None:
-    #     gt_file = args.val_gt
-
-    # if args.test_img is not None:
-    #     img_file_test = args.test_img
-    # if args.test_gt is not None:
-    #     gt_file_test = args.test_gt
-
     if args.gpu is not None:
         CUDA_VISIBLE_DEVICES = args.gpu
     if args.epochs is not None:
         EPOCHS = args.epochs
     if args.timeout is not None:
         TIMEOUT = args.timeout
-
     if args.gpus is not None:
         GPUS = args.gpus
-
         #if there were no GPUS explicitly given, take the last ones
         #the assumption is, that we use as many gpus for evaluation as for training
         #so we have to hide the other gpus to not try to allocate memory there
@@ -754,16 +744,12 @@ if __name__ == "__main__":
             for i in range(GPUS, 2*GPUS):
                 CUDA_VISIBLE_DEVICES += str(i) + ","
             print(CUDA_VISIBLE_DEVICES)
-
     if args.init is not None:
         STARTWITH = args.init
-
     if args.steps is not None:
         steps = args.steps
-
     if args.config is not None:
         CONFIG = args.config
-
     if args.testing is not None:
         TESTING = args.testing
 
